@@ -1,128 +1,13 @@
-<!DOCTYPE html>
-<html lang="en-US">
+<!doctype html>
+<html lang="en">
   <head>
-    <!-- Title & SEO-->
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Amanda Brook Design</title>
-    <meta name="description" content="Amanda's digital portfolio for art, design, and web development.">
-    <link rel="canonical" href="">
-
-    <!-- Bsic Meta -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-
-    <!-- Javascript Slick Slider Deferred Loading-->
-    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.0.min.js" defer></script>
-    <script type="text/javascript" src="//code.jquery.com/jquery-migrate-1.2.1.min.js" defer></script>
-    <script type="text/javascript" src="slick/slick.min.js" defer></script>
-    <script src="js/slider-init.js" defer></script>
-
-    <!-- Slick Slider CSS & JQuery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="slick/slick.css"/>
-    <link rel="stylesheet" type="text/css" href="slick/slick-theme.css"/>
-
-    <!-- Gallery Display JS -->
-    <script type="module" src="js/painting-class.js" defer></script>
-    <script type="module" src="js/painting-list.js" defer></script>
-    <script type="module" src="js/design-class.js" defer></script>
-    <script type="module" src="js/design-list.js" defer></script>
-    <script type="module" src="js/web-class.js" defer></script>
-    <script type="module" src="js/web-list.js" defer></script>
-    <script type="module" src="js/gallery-fill.js" defer></script>
-    <script type="module" src="js/gallery-modal.js" defer></script>
-
-    <!-- Link to CSS -->
-    <link rel="stylesheet" href="css/style.css?v=1.0">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css?family=Averia+Serif+Libre|Open+Sans&display=swap" rel="stylesheet">
-
-    <!-- Linked mobile menu icon-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-   
   </head>
   <body>
-    <header>
-      <!-- Top Navigation -->
-      <nav>
-        <div class="nav--container">
-          <div class="logo">
-            <a href><img src="images/Logo.png" Alt="Logo"></a>
-          </div>
-          <ul class="nav" id="myNav">
-            <li class="nav--button"><a href="#portfolio">portfolio</a></li>
-            <li class="nav--button"><a href="#about">about</a></li>
-            <li class="nav--button"><a href="#contact">contact</a></li>
-            <!-- Created onclick event for mobile nav -->
-            <li class="nav--button"><a href="javascript:void(0);"class="icon" onclick="myFunction()"><i class="fa fa-bars"></i></a></li>
-          </ul>
-        </div>
-      </nav>
-      <!-- Title -->
-      <h1>AMANDA BROOK</h1>
-      <h2>art and design</h2>
-    </header>
-    <main class="grid--main">
-      <!-- Portfolio Gallery -->
-      <section class="portfolio">
-        <h1 class="anchor" id="portfolio">PORTFOLIO</h1>
-        <main class="gallery--container">
-            <p>Painting and Illustration</p>
-            <div class="gallery" id="painting--illustration"></div>
-            <p>Graphic Design</p>
-            <div class="gallery" id="graphic--design"></div>
-            <p>Web Design and Development</p>
-            <div class="gallery" id="web--design"></div>
-        </main>
-        <!-- Modal Image Info (Refers to Javascript) -->
-        <article id="myModal" class="modal">
-          <span class="close">&times;</span>
-          <img class="modal-content" id="img01">
-          <div id="imageTitle">
-          </div>
-        </article>
-      </section>
-      <!-- About -->
-      <section class="about">
-          <h1 class="anchor" id="about">ABOUT</h1>
-          <article>
-            <picture>
-              <source srcset="images/Self Portrait.webp" type="image/webp">
-              <source srcset="images/Self Portrait.webp" type="image/jpeg">
-              <img loading="lazy" src="images/Self Portrait.jpg" alt="Artist's Portriat"></img>
-            </picture>
-            <p>
-              <em>Hello, I'm Amanda.</em></br>
-                This website is the coelescion of my studies regarding
-                intrinsic motivation, emotion, and communication through art, design, and coding.
-            </p>
-            <p id="paragraph--2">
-                My goal is to create a space for interaction with my work and exploring the intersection of internet art and user-friendly design. 
-            </p>
-          </article>
-      </section>
-    </main>
-    <!-- Contact and Footer -->
-  <footer>
-    <h1 class="anchor" id="contact">CONTACT</h1>
-    <div class= footer>
-        <p> amandajbrook.contact@gmail.com</p>
-        <a href="idea-garden.html">Idea Garden</a>
-    </div>
-  </footer>
-    <!-- Javascript-->
-    <!-- Mobile & Responsive Nav Script-->
-  <script>
-    function myFunction() {
-      var x = document.getElementById("myNav");
-      if (x.className === "nav") {
-        x.className += " responsive";
-        }
-      else {
-        x.className = "nav";
-      }
-    }
-  </script> 
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

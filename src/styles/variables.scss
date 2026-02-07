@@ -1,0 +1,21 @@
+/* CSS Variables */
+:root {
+  /*Typeface*/
+  --serif-typeface: 'Averia Serif Libre', serif;
+  --sans-serif-typeface: 'Open Sans', sans-serif;
+  /*Colors*/
+  --primary: #c8ff00;
+  --dark: #1d161f;
+  --light: #e0e0e0;
+  /*Drop Shadow*/
+  --shadow: 0 2px 8px rgba(104, 104, 104, 2);
+  /* Frosted Black Glass */
+  --glass: #000000ab;
+}
+
+/* Responsive Breakpoints (in em units for accessibility) */
+/* 1em = 16px by default */
+$mobile-small: 25em; // ~400px
+$tablet: 37.5em; // ~600px
+$desktop: 64em; // ~1024px
+$wide: 90em; // ~1440px

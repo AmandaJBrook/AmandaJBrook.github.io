@@ -1,0 +1,158 @@
+/* Top Navigation */
+nav {
+  grid-area: 'nav';
+  display: grid;
+  position: fixed;
+  grid-template-areas: 'nav';
+  grid-template-rows: minmax(min-content, 60px);
+  padding: 10px;
+  background-color: var(--glass);
+  width: 100%;
+}
+
+.nav {
+  display: grid;
+  grid-auto-flow: column;
+  grid-gap: 30px;
+  place-items: center;
+  justify-self: right;
+  list-style-type: none;
+  margin: -20px;
+}
+
+.nav--container {
+  align-content: space-evenly;
+  display: grid;
+  grid-auto-flow: column;
+  place-items: center;
+}
+
+.nav li {
+  justify-self: right;
+  color: var(--light);
+  transition: color 0.5s;
+
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.nav a {
+  font-family: var(--serif-typeface), sans-serif;
+  font-size: 1.2em;
+  letter-spacing: 0.3rem;
+  text-align: center;
+  text-decoration: none;
+  color: var(--light);
+  text-shadow:
+    0px 2px 3px rgba(0, 0, 0, 1),
+    0px 4px 13px rgba(0, 0, 0, 0.5),
+    0px 8px 23px rgba(0, 0, 0, 0.2);
+  transition: color 0.5s;
+  display: none;
+}
+
+.nav i {
+  display: inline-grid;
+  font-size: 1.5em;
+  padding-right: 30px;
+}
+
+.nav--button a:hover {
+  color: var(--primary);
+}
+
+/* Logo */
+.logo {
+  text-align: start;
+  justify-self: left;
+  padding-left: 10px;
+  padding-top: 2px;
+  z-index: 2;
+  width: max-content;
+  height: max-content;
+
+  img {
+    max-width: 150px;
+    height: auto;
+  }
+
+  h1 {
+    font-size: 2em;
+  }
+}
+
+/* Responsive Navigation - Mobile First */
+
+.nav .icon {
+  display: block;
+  padding-right: 0;
+  margin-right: auto;
+}
+
+.nav.responsive {
+  display: block;
+  position: fixed;
+  width: 100%;
+  padding-top: 30px;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  background-color: black;
+  margin: auto;
+
+  .icon {
+    position: absolute;
+    top: 10px;
+    right: 0;
+    margin-right: -24px;
+    padding: 14px;
+  }
+
+  a {
+    display: block;
+    text-align: center;
+    padding-bottom: 30px;
+    padding-left: 20vw;
+    padding-right: 20vw;
+  }
+
+  i {
+    display: block;
+    margin: 0;
+  }
+}
+
+/* Tablet and up (37.5em = 600px) */
+@media (min-width: 37.5em) {
+  .nav a {
+    display: block;
+  }
+
+  .nav .icon {
+    display: none;
+  }
+
+  .nav i {
+    display: none;
+  }
+
+  header {
+    margin-bottom: 10vh;
+  }
+
+  .nav.responsive {
+    display: none;
+  }
+
+  .logo img {
+    width: 60px;
+  }
+}
+
+/* Desktop and up (64em = 1024px) */
+@media (min-width: 64em) {
+  .nav a {
+    font-size: 1.5em;
+  }
+}

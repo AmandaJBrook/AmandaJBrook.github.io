@@ -1,0 +1,10 @@
+@use './variables.scss' as *;
+@use './global.scss' as *;
+@use './nav.scss' as *;
+@use './gallery.scss' as *;
+
+/* Removed from original:
+ * - All Slick Slider styles (.gallery .slick-dots, .slick-loading, .slick-initialized, etc.)
+ * - All Modal popup styles (#myImg, .modal, .modal-content, #caption, @keyframes zoom, .close)
+ * These were orphaned from vanilla JS implementation and not used in Vue version
+ */

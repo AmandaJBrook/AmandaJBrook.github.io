@@ -1,0 +1,94 @@
+/* Portfolio Gallery Section - REMOVED: Slick Slider & Modal Code */
+.gallery--container p {
+  font-size: 1em;
+  text-transform: uppercase;
+  padding: 0 30px;
+}
+
+.gallery {
+  width: 80%;
+  margin: 0 auto;
+
+  img {
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+figure {
+  margin: 0;
+  align-items: center;
+}
+
+.image--container {
+  margin: 15px;
+  flex: 100%;
+  max-width: 80%;
+
+  img {
+    width: 100%;
+    font-size: 1rem;
+  }
+
+  h1 {
+    font-size: 1rem;
+    white-space: initial;
+    padding-top: 10px;
+  }
+
+  h2 {
+    font-size: 0.8rem;
+    white-space: initial;
+  }
+}
+
+/* Responsive Gallery - Mobile First */
+
+/* Tablet and up (37.5em = 600px) */
+@media (min-width: 37.5em) {
+  .gallery--container p {
+    font-size: 1.8rem;
+  }
+
+  .image--container {
+    flex: 50%;
+    max-width: 60%;
+
+    img {
+      object-fit: cover;
+      width: 100%;
+      vertical-align: middle;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+/* Desktop and up (64em = 1024px) */
+@media (min-width: 64em) {
+  .gallery--container p {
+    font-size: 2em;
+  }
+
+  .image--container {
+    flex: auto;
+    max-width: none;
+
+    h1 {
+      font-size: 1.1rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+    }
+  }
+}
