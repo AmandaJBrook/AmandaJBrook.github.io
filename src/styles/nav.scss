@@ -1,26 +1,31 @@
 /* Top Navigation */
 nav {
-  grid-area: 'nav';
+  grid-area: nav;
   display: grid;
   position: fixed;
   grid-template-areas: 'nav';
   grid-template-rows: minmax(min-content, 60px);
   padding: 10px;
   background-color: var(--glass);
+  backdrop-filter: blur(10px);
   width: 100%;
+  z-index: 100;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .nav {
   display: grid;
   grid-auto-flow: column;
-  grid-gap: 30px;
+  gap: 30px;
   place-items: center;
   justify-self: right;
   list-style-type: none;
   margin: -20px;
 }
 
-.nav--container {
+.nav-container {
   align-content: space-evenly;
   display: grid;
   grid-auto-flow: column;
@@ -45,11 +50,21 @@ nav {
   text-decoration: none;
   color: var(--light);
   text-shadow:
-    0px 2px 3px rgba(0, 0, 0, 1),
-    0px 4px 13px rgba(0, 0, 0, 0.5),
-    0px 8px 23px rgba(0, 0, 0, 0.2);
+    0 2px 3px rgb(0 0 0 / 100%),
+    0 4px 13px rgb(0 0 0 / 50%),
+    0 8px 23px rgb(0 0 0 / 20%);
   transition: color 0.5s;
   display: none;
+
+  &:link,
+  &:visited {
+    color: var(--light);
+  }
+
+  &:hover,
+  &:active {
+    color: var(--primary);
+  }
 }
 
 .nav i {
@@ -58,23 +73,21 @@ nav {
   padding-right: 30px;
 }
 
-.nav--button a:hover {
+.nav-button a:hover {
   color: var(--primary);
 }
 
 /* Logo */
 .logo {
-  text-align: start;
-  justify-self: left;
-  padding-left: 10px;
-  padding-top: 2px;
-  z-index: 2;
-  width: max-content;
-  height: max-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem; /* Use consistent spacing */
 
   img {
-    max-width: 150px;
+    width: clamp(64px, 12vw, 120px);
     height: auto;
+    display: block;
   }
 
   h1 {
@@ -124,7 +137,7 @@ nav {
 }
 
 /* Tablet and up (37.5em = 600px) */
-@media (min-width: 37.5em) {
+@media (width >= 37.5em) {
   .nav a {
     display: block;
   }
@@ -151,7 +164,7 @@ nav {
 }
 
 /* Desktop and up (64em = 1024px) */
-@media (min-width: 64em) {
+@media (width >= 64em) {
   .nav a {
     font-size: 1.5em;
   }

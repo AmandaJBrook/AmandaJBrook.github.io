@@ -14,16 +14,14 @@
 
     <!-- Logo that links to home -->
     <a href="/" class="logo">
-      <figure>
-        <img src="/images/Logo.png" alt="Amanda Brook Design Logo" />
-      </figure>
+      <img src="/images/Logo.png" alt="Amanda Brook Design Logo" />
     </a>
 
     <!-- Main navigation that is hidden on mobile -->
     <menu id="myNav" :class="{ responsive: isMobileMenuOpen }">
-      <li><a href="#portfolio" @click="isMobileMenuOpen = false">portfolio</a></li>
-      <li><a href="#about" @click="isMobileMenuOpen = false">about</a></li>
-      <li><a href="#contact" @click="isMobileMenuOpen = false">contact</a></li>
+      <li><a href="#portfolio" @click="isMobileMenuOpen = false" class="nav-link">portfolio</a></li>
+      <li><a href="#about" @click="isMobileMenuOpen = false" class="nav-link">about</a></li>
+      <li><a href="#contact" @click="isMobileMenuOpen = false" class="nav-link">contact</a></li>
     </menu>
   </nav>
 </template>
@@ -55,7 +53,7 @@ const isMobileMenuOpen = ref(false)
   display: block;
   width: 25px;
   height: 3px;
-  background: black;
+  background: rgb(255 255 255);
   margin: 5px 0;
   transition: 0.3s;
 }
@@ -67,8 +65,36 @@ menu {
   margin: 0;
   gap: 1.5rem;
 }
+
+menu li {
+  color: var(--light);
+}
+
+.nav-link {
+  font-family: var(--serif-typeface), sans-serif;
+  font-size: 1.2em;
+  letter-spacing: 0.3rem;
+  text-decoration: none;
+  color: var(--light);
+  text-shadow:
+    0 2px 3px rgb(0 0 0 / 100%),
+    0 4px 13px rgb(0 0 0 / 50%),
+    0 8px 23px rgb(0 0 0 / 20%);
+  transition: color 0.3s ease;
+}
+
+.nav-link:link,
+.nav-link:visited {
+  color: var(--light);
+}
+
+.nav-link:hover,
+.nav-link:active {
+  color: var(--primary);
+}
+
 /* Mobile styles */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .hamburger {
     display: block;
   }
@@ -79,7 +105,7 @@ menu {
     top: 60px;
     right: 0;
     left: 0;
-    background: white;
+    background: inherit;
     padding: 1rem;
     gap: 0;
   }
