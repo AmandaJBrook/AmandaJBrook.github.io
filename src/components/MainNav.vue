@@ -18,7 +18,7 @@
     </a>
 
     <!-- Main navigation that is hidden on mobile -->
-    <menu id="myNav" :class="{ responsive: isMobileMenuOpen }">
+    <menu :class="{ responsive: isMobileMenuOpen }">
       <li><a href="#portfolio" @click="isMobileMenuOpen = false" class="nav-link">portfolio</a></li>
       <li><a href="#about" @click="isMobileMenuOpen = false" class="nav-link">about</a></li>
       <li><a href="#contact" @click="isMobileMenuOpen = false" class="nav-link">contact</a></li>
@@ -35,10 +35,21 @@ const isMobileMenuOpen = ref(false)
 </script>
 
 <style scoped>
-.site-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+nav {
+  grid-area: nav;
+  display: grid;
+  position: fixed;
+  grid-template-areas: 'nav';
+  grid-template-columns: auto 1fr;
+  grid-template-rows: minmax(min-content, 60px);
+  padding: 10px;
+  background-color: var(--glass);
+  backdrop-filter: blur(10px);
+  width: 100%;
+  z-index: 100;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .hamburger {
@@ -58,16 +69,31 @@ const isMobileMenuOpen = ref(false)
   transition: 0.3s;
 }
 
+/* Logo */
+.logo {
+  justify-self: left;
+  padding-left: 10px;
+  padding-top: 2px;
+  z-index: 2;
+  width: max-content;
+  height: max-content;
+
+  img {
+    display: block;
+    width: clamp(51.2px, 9.6vw, 96px);
+    height: auto;
+    margin: 5px 0;
+  }
+}
+
 menu {
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
   list-style: none;
   padding: 0;
   margin: 0;
   gap: 1.5rem;
-}
-
-menu li {
-  color: var(--light);
 }
 
 .nav-link {
@@ -95,8 +121,17 @@ menu li {
 
 /* Mobile styles */
 @media (width <= 768px) {
+  nav {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+
   .hamburger {
     display: block;
+  }
+
+  .logo {
+    justify-self: right;
   }
 
   menu {
@@ -105,7 +140,6 @@ menu li {
     top: 60px;
     right: 0;
     left: 0;
-    background: inherit;
     padding: 1rem;
     gap: 0;
   }
