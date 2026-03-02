@@ -2,12 +2,14 @@ class OracleCard {
   constructor(
     // parameters of the constructor
     link,
-    name,
+    title,
+    subtitle,
     description,
   ) {
     // properties of the class
     this.link = link
-    this.name = name
+    this.title = title
+    this.subtitle = subtitle
     this.description = description
   }
 }

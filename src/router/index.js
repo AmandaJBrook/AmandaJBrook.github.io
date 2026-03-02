@@ -14,6 +14,11 @@ const router = createRouter({
       name: 'oracle',
       component: () => import('@/views/OracleView.vue'),
     },
+    {
+      path: '/oracle-library',
+      name: 'oracle library',
+      component: () => import('@/views/OracleLibrary.vue'),
+    },
   ],
 })
 

@@ -1,6 +1,7 @@
 <!-- Acts as a wrapper for the entire app -->
 <script setup>
 import { RouterView } from 'vue-router'
+import '@/styles/main.scss'
 // No menu logic here because your menu is now INSIDE HomeView.vue
 </script>
 

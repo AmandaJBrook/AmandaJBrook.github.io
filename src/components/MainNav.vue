@@ -30,6 +30,9 @@ watch(isMobileMenuOpen, async (newVal) => {
   }
 })
 
+/**
+ * Handles window resize event, updating windowWidth and closing the mobile menu if the window width exceeds 768px.
+ */
 const handleResize = () => {
   windowWidth.value = window.innerWidth
   if (windowWidth.value > 768) {
@@ -45,18 +48,41 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
 
+/* Smoothly scrolls to the target element when a nav link is clicked.
+ */
 const smoothScroll = (e) => {
+  const href = e.target.getAttribute('href')
+  if (!href || !href.startsWith('#')) return
   e.preventDefault()
-  const target = document.querySelector(e.target.getAttribute('href'))
+  const target = document.querySelector(href)
   if (target) {
     target.scrollIntoView({ behavior: 'smooth' })
   }
 }
 
+/* Handles a nav link click event, smoothly scrolling to the target element and closing the mobile menu.
+ */
 const handleNavClick = (e) => {
   smoothScroll(e)
   isMobileMenuOpen.value = false
 }
+
+defineProps({
+  links: {
+    type: Array,
+    /*
+     * Default value for the links prop.
+     * Returns an array of three objects, each with the keys label, href, and type.
+     * The objects represent the links for the portfolio, about, and contact sections respectively.
+     * The href values are all anchor links, pointing to the corresponding sections on the page.
+     */
+    default: () => [
+      { label: 'portfolio', href: '#portfolio', type: 'anchor' },
+      { label: 'about', href: '#about', type: 'anchor' },
+      { label: 'contact', href: '#contact', type: 'anchor' },
+    ],
+  },
+})
 </script>
 
 <template>
@@ -92,14 +118,18 @@ const handleNavClick = (e) => {
     </div>
 
     <menu ref="menuRef" :class="{ responsive: isMobileMenuOpen }">
-      <li>
-        <a href="#portfolio" @click="handleNavClick" class="nav-link">portfolio</a>
-      </li>
-      <li>
-        <a href="#about" @click="handleNavClick" class="nav-link">about</a>
-      </li>
-      <li>
-        <a href="#contact" @click="handleNavClick" class="nav-link">contact</a>
+      <li v-for="link in links" :key="link.href">
+        <template v-if="link.type === 'anchor'">
+          <a :href="link.href" @click="smoothScroll" class="nav-link">{{ link.label }}</a>
+        </template>
+        <template v-else-if="link.type === 'external'">
+          <a :href="link.href" @click="handleNavClick" class="nav-link">{{ link.label }}</a>
+        </template>
+        <template v-else>
+          <RouterLink :to="link.href" @click="isMobileMenuOpen = false" class="nav-link">{{
+            link.label
+          }}</RouterLink>
+        </template>
       </li>
     </menu>
   </nav>
