@@ -12,7 +12,12 @@ const emit = defineEmits(['shuffle', 'clear-table', 'deal-spread', 'reset', 'tog
       <button @click="emit('clear-table')">Clear Table</button>
       <button @click="emit('reset')">Reset</button>
       <label>
-        <input type="checkbox" role="switch" @change="emit('toggle-reversal')" />
+        <input
+          type="checkbox"
+          role="switch"
+          @change="emit('toggle-reversal')"
+          aria-checked="false"
+        />
         Reversal Mode
       </label>
     </div>

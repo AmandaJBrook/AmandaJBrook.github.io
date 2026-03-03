@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import MainNav from '../components/MainNav.vue'
 import OracleNav from '../components/OracleNav.vue'
+import OracleCard from '../components/OracleCard.vue'
 import { useCurrentDeckStore } from '../stores/currentDeck'
 const store = useCurrentDeckStore()
 </script>
 
 <template>
-  <body class="oracle-body">
+  <div class="oracle-body">
     <header>
       <!-- Top Navigation -->
       <MainNav
@@ -17,14 +18,22 @@ const store = useCurrentDeckStore()
       />
     </header>
     <main class="oracle-main">
-      <section class="spread-area">
-        <p>Playable area for cards will go here.</p>
+      <section class="play-area">
+        <OracleCard
+          v-for="wrapper in store.currentDeck.placedCards"
+          :key="wrapper.card.title"
+          :wrapper="wrapper"
+          @flip="store.flipCard"
+          @drag-end="({ wrapper, x, y }) => store.updateCardPosition(wrapper, x, y)"
+        />
       </section>
-      <section class="deck-area"></section>
+      <section class="deck-area">
+        <!-- cards stack here, top card is draggable out -->
+      </section>
       <section class="card-selection" v-if="store.selectedCard">
-        <h2>{{ store.selectedCard.title.toUpperCase() }}</h2>
-        <h3>{{ store.selectedCard.subtitle.toUpperCase() }}</h3>
-        <p>{{ store.selectedCard.description }}</p>
+        <h2>{{ store.selectedCard.card.title.toUpperCase() }}</h2>
+        <h3>{{ store.selectedCard.card.subtitle.toUpperCase() }}</h3>
+        <p>{{ store.selectedCard.card.description }}</p>
         <button @click="store.clearSelection">✕</button>
       </section>
     </main>
@@ -37,7 +46,7 @@ const store = useCurrentDeckStore()
         @deal-spread="(spread) => console.log('deal spread:', spread)"
       />
     </footer>
-  </body>
+  </div>
 </template>
 
 <style scoped>
@@ -65,7 +74,7 @@ header {
   margin: auto;
 }
 
-.spread-area {
+.play-area {
   position: absolute;
   place-content: center center;
   border-radius: 5px;

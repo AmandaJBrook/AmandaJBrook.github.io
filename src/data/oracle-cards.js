@@ -41,7 +41,7 @@ const flow = new OracleCard(
   '/images/oracle-cards/front/flow.png',
   'Flow',
   'Laminar or turbulent',
-  'When you are in a state of laminar flow, you are able to move through life with ease and grace. You are able to navigate challenges and obstacles with fluidity, and you are able to adapt to change with ease.',
+  'When you are in a state of laminar flow, you are able to move through life with ease and grace. You are able to navigate challenges and obstacles with fluidity, and you are able to adapt to change with ease. The flow state begins and ends with you.',
 )
 /* Make distinct from zeal */
 const eddy = new OracleCard(
@@ -71,8 +71,8 @@ const scope = new OracleCard(
 const voilition = new OracleCard(
   '/images/oracle-cards/front/voilition.png',
   'Voilition',
-  'Willpower',
-  'Commanding change with your own will. Internal cultivation breeds external transformation. The flow state begins and ends with you.',
+  'Wave of influence',
+  'Commanding change with your own will. Internal cultivation breeds external transformation. ',
 )
 const flood = new OracleCard(
   '/images/oracle-cards/front/flood.png',

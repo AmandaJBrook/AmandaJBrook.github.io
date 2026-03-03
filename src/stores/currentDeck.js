@@ -5,7 +5,7 @@ import oracleArray from '@/data/oracle-cards.js'
 import { fisherYates, riffle, overhand, cut } from '@/utils/shuffles/index.js'
 
 const shufflers = { riffle, overhand, 'fisher-yates': fisherYates, cut }
-
+// This store manages the state of the current deck, including the order of cards, selected card, and shuffle history.
 export const useCurrentDeckStore = defineStore('currentDeck', () => {
   const currentDeck = ref(new Deck('oracle', oracleArray))
   const selectedCard = ref(null)
@@ -44,6 +44,14 @@ export const useCurrentDeckStore = defineStore('currentDeck', () => {
     selectedCard.value = null
   }
 
+  function flipCard(wrapper) {
+    wrapper.flipped = !wrapper.flipped
+  }
+
+  function updateCardPosition(wrapper, x, y) {
+    wrapper.position = { x, y }
+  }
+
   return {
     currentDeck,
     selectedCard,
@@ -54,5 +62,7 @@ export const useCurrentDeckStore = defineStore('currentDeck', () => {
     reset,
     selectCard,
     clearSelection,
+    flipCard,
+    updateCardPosition,
   }
 })

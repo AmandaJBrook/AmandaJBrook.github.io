@@ -5,7 +5,9 @@ class Deck {
     this.cards = cards.map((card) => ({
       card,
       reversed: false,
+      flipped: false,
       placedAt: null,
+      position: { x: 0, y: 0 },
     }))
     this.placedCards = []
     this.shuffleHistory = []
