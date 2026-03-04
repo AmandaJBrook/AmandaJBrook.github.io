@@ -1,10 +1,12 @@
 <script setup>
 import { vDraggable } from '@neodrag/vue'
+import { findAncestor } from 'typescript'
 import { ref } from 'vue'
 
 const props = defineProps({
   wrapper: { type: Object, required: true },
   draggable: { type: Boolean, default: true },
+  inDeck: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['flip', 'drag-end'])
@@ -12,7 +14,7 @@ const isDragging = ref(false)
 
 const draggableOptions = {
   disabled: !props.draggable,
-  defaultPosition: props.wrapper.position,
+  defaultPosition: props.inDeck ? { x: 0, y: 0 } : props.wrapper.position,
   onDrag: () => {
     isDragging.value = true
   },
@@ -33,21 +35,26 @@ const handleClick = () => {
   <div
     v-draggable="draggableOptions"
     class="oracle-card"
-    :class="{ reversed: wrapper.reversed, flipped: wrapper.flipped, dragging: isDragging }"
+    :class="{
+      reversed: wrapper.reversed,
+      faceDown: wrapper.faceDown,
+      dragging: isDragging,
+      inDeck: inDeck,
+    }"
     @click="handleClick"
   >
     <div class="card-inner">
       <div class="card-face card-front">
         <div class="card-image-frame">
-          <img :src="wrapper.card.link" :alt="wrapper.card.title" />
+          <img :src="wrapper.card.link" :alt="wrapper.card.title" :draggable="!inDeck" />
         </div>
         <div class="card-text-frame">
-          <p class="card-title">{{ wrapper.card.title.toUpperCase() }}</p>
-          <p class="card-subtitle">{{ wrapper.card.subtitle.toUpperCase() }}</p>
+          <h1 class="card-title">{{ wrapper.card.title.toUpperCase() }}</h1>
+          <h2 class="card-subtitle">{{ wrapper.card.subtitle.toUpperCase() }}</h2>
         </div>
       </div>
       <div class="card-face card-back">
-        <!-- card back image goes here -->
+        <img :src="'/images/oracle-cards/back.png'" alt="Card Back" :draggable="false" />
       </div>
     </div>
   </div>
@@ -55,11 +62,20 @@ const handleClick = () => {
 
 <style scoped>
 .oracle-card {
-  width: 199px;
-  height: 285px;
+  width: 119px;
+  height: 170px;
   cursor: grab;
   perspective: 1000px;
   position: absolute;
+  border-radius: 10px;
+}
+
+/* When sitting in the deck, position relative so it stays inside deck-area
+   and neodrag translates from (0,0) rather than escaping to oracle-main */
+.oracle-card.in-deck {
+  position: relative;
+  left: unset;
+  top: unset;
 }
 
 .oracle-card.dragging {
@@ -75,17 +91,11 @@ const handleClick = () => {
   transition: transform 0.6s ease;
 }
 
-/* flipped state — note this rotates the inner, not the card,
-   so reversed (upside down) and flipped (face up) are independent */
-.oracle-card.flipped .card-inner {
+.oracle-card.faceDown .card-inner {
   transform: rotateY(180deg);
 }
 
-.oracle-card.reversed .card-inner {
-  transform: rotateX(180deg);
-}
-
-.oracle-card.flipped.reversed .card-inner {
+.oracle-card.reversed .card-face.card-front {
   transform: rotateY(180deg) rotateX(180deg);
 }
 
@@ -96,13 +106,27 @@ const handleClick = () => {
   backface-visibility: hidden;
 }
 
+/* Front is hidden by default — revealed when .faceDown rotates card-inner */
+.card-face.card-front {
+  background-color: black;
+  border-radius: 10px;
+  transform: none;
+}
+
+/* Back is visible by default — no transform needed */
 .card-back {
   transform: rotateY(180deg);
 }
 
+.card-back img {
+  width: 119px;
+  height: 170px;
+  border-radius: 10px;
+}
+
 .card-image-frame {
-  width: 159px;
-  height: 208px;
+  width: 90px;
+  height: 110px;
   margin: 20px auto 0;
   overflow: hidden;
 
@@ -114,24 +138,37 @@ const handleClick = () => {
 }
 
 .card-text-frame {
-  width: 159px;
-  height: 37px;
+  width: 90px;
+  min-width: 0;
+  height: 30px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  padding: 0 2px;
+  box-sizing: border-box;
 }
 
+/* Scale trick to bypass browser minimum font size */
 .card-title {
-  font-size: 1.4rem;
+  font-size: 12px;
   margin: 0;
-  line-height: 1;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  transform: scale(0.5);
+  transform-origin: center center;
 }
 
 .card-subtitle {
-  font-size: 0.85rem;
+  font-size: 12px;
   margin: 0;
-  line-height: 1;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  transform: scale(0.35);
+  transform-origin: center center;
 }
 </style>

@@ -5,7 +5,7 @@ class Deck {
     this.cards = cards.map((card) => ({
       card,
       reversed: false,
-      flipped: false,
+      faceDown: true,
       placedAt: null,
       position: { x: 0, y: 0 },
     }))
@@ -31,7 +31,11 @@ class Deck {
   }
 
   clearTable() {
-    this.placedCards.forEach((w) => (w.reversed = false))
+    this.placedCards.forEach((w) => {
+      w.reversed = false
+      w.faceDown = true
+      w.position = { x: 0, y: 0 }
+    })
     this.cards = [...this.cards, ...this.placedCards]
     this.placedCards = []
   }

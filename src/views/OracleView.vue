@@ -3,13 +3,66 @@ import MainNav from '../components/MainNav.vue'
 import OracleNav from '../components/OracleNav.vue'
 import OracleCard from '../components/OracleCard.vue'
 import { useCurrentDeckStore } from '../stores/currentDeck'
+import { spreads } from '../data/spreads'
+
 const store = useCurrentDeckStore()
+
+// Called when a placed card is clicked.
+// flipCard toggles wrapper.faceDown, selectCard updates the card-selection panel.
+function handleFlip(wrapper) {
+  store.flipCard(wrapper)
+  store.selectCard(wrapper)
+}
+
+// Called when the top deck card is dragged.
+// Only draws the card if it was dropped inside the play-area boundary.
+// If dropped outside, neodrag resets the card visually since wrapper.position hasn't changed.
+function onDeckDragEnd({ wrapper, x, y }) {
+  const playArea = document.querySelector('.play-area')
+  const deckArea = document.querySelector('.deck-area')
+  const playRect = playArea.getBoundingClientRect()
+  const deckRect = deckArea.getBoundingClientRect()
+
+  // neodrag offsetX/Y are relative to the element's start position,
+  // so we add the deck-area's screen position to get absolute coordinates.
+  const absX = deckRect.left + x
+  const absY = deckRect.top + y
+
+  const inPlayArea =
+    absX >= playRect.left &&
+    absX <= playRect.right &&
+    absY >= playRect.top &&
+    absY <= playRect.bottom
+
+  if (inPlayArea) {
+    // Store position relative to play-area so the card renders at the drop point
+    store.updateCardPosition(wrapper, absX - playRect.left, absY - playRect.top)
+    store.currentDeck.placeCard(wrapper)
+
+    // Zero out the next top card's position so neodrag renders it
+    // flush inside deck-area and not at stale coordinates
+    const nextCard = store.currentDeck.cards[store.currentDeck.cards.length - 1]
+    if (nextCard) store.updateCardPosition(nextCard, 0, 0)
+  } else {
+    // If dropped outside play-area, reset position to deck-area via neodrag
+    store.updateCardPosition(wrapper, 0, 0)
+  }
+}
+
+function handleDealSpread(spreadName) {
+  const positions = spreads[spreadName]
+  positions.forEach((pos) => {
+    const wrapper = store.currentDeck.cards[store.currentDeck.cards.length - 1]
+    if (!wrapper) return
+    store.updateCardPosition(wrapper, pos.x, pos.y)
+    store.currentDeck.placeCard(wrapper)
+  })
+}
 </script>
 
 <template>
   <div class="oracle-body">
     <header>
-      <!-- Top Navigation -->
       <MainNav
         :links="[
           { label: 'home', href: '/', type: 'router' },
@@ -23,13 +76,23 @@ const store = useCurrentDeckStore()
           v-for="wrapper in store.currentDeck.placedCards"
           :key="wrapper.card.title"
           :wrapper="wrapper"
-          @flip="store.flipCard"
+          @flip="handleFlip"
           @drag-end="({ wrapper, x, y }) => store.updateCardPosition(wrapper, x, y)"
         />
       </section>
+
       <section class="deck-area">
-        <!-- cards stack here, top card is draggable out -->
+        <OracleCard
+          v-if="store.currentDeck.cards.length"
+          :key="store.currentDeck.cards[store.currentDeck.cards.length - 1].card.title"
+          :wrapper="store.currentDeck.cards[store.currentDeck.cards.length - 1]"
+          :draggable="true"
+          :in-deck="true"
+          @drag-end="onDeckDragEnd"
+        />
       </section>
+
+      <!-- Card detail panel — shown when a placed card is clicked -->
       <section class="card-selection" v-if="store.selectedCard">
         <h2>{{ store.selectedCard.card.title.toUpperCase() }}</h2>
         <h3>{{ store.selectedCard.card.subtitle.toUpperCase() }}</h3>
@@ -43,7 +106,7 @@ const store = useCurrentDeckStore()
         @clear-table="store.clearTable"
         @reset="store.reset"
         @toggle-reversal="store.reversalMode = !store.reversalMode"
-        @deal-spread="(spread) => console.log('deal spread:', spread)"
+        @deal-spread="handleDealSpread"
       />
     </footer>
   </div>
@@ -76,7 +139,6 @@ header {
 
 .play-area {
   position: absolute;
-  place-content: center center;
   border-radius: 5px;
   top: 5%;
   left: 3%;
@@ -87,27 +149,61 @@ header {
 
 .deck-area {
   background-image: url('/images/oracle-cards/back.png');
-  position: absolute;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  place-content: center center;
-  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  border-radius: 10px;
   bottom: 5%;
   left: 3%;
   width: 119px;
   height: 170px;
+  z-index: 10;
 }
 
 .card-selection {
   position: absolute;
-  place-content: center center;
   border-radius: 5px;
   bottom: 5%;
   right: 3%;
   width: clamp(200px, 20vw, 300px);
   height: 30%;
   border: 1px solid #b1c028;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  color: white;
+}
+
+.card-selection h2 {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+}
+
+.card-selection h3 {
+  margin: 0 0 8px;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.card-selection p {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.card-selection button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 footer {

@@ -32,6 +32,7 @@ export const useCurrentDeckStore = defineStore('currentDeck', () => {
       card,
       reversed: false,
       placedAt: null,
+      faceDown: true,
     }))
     currentDeck.value.reset(shufflers[lastAlgorithm.value](freshWrappers, reversalMode.value))
   }
@@ -45,7 +46,7 @@ export const useCurrentDeckStore = defineStore('currentDeck', () => {
   }
 
   function flipCard(wrapper) {
-    wrapper.flipped = !wrapper.flipped
+    wrapper.faceDown = !wrapper.faceDown
   }
 
   function updateCardPosition(wrapper, x, y) {
