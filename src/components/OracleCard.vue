@@ -6,6 +6,7 @@ const props = defineProps({
   wrapper: { type: Object, required: true },
   draggable: { type: Boolean, default: true },
   inDeck: { type: Boolean, default: false },
+  bounds: { type: Object, default: null },
 })
 
 const emit = defineEmits(['flip', 'drag-end'])
@@ -14,6 +15,7 @@ const isDragging = ref(false)
 const draggableOptions = {
   disabled: !props.draggable,
   defaultPosition: props.inDeck ? { x: 0, y: 0 } : props.wrapper.position,
+  bounds: props.bounds ?? undefined,
   onDrag: () => {
     isDragging.value = true
   },

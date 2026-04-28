@@ -2,10 +2,12 @@
 import MainNav from '../components/MainNav.vue'
 import OracleNav from '../components/OracleNav.vue'
 import OracleCard from '../components/OracleCard.vue'
+import { ref } from 'vue'
 import { useCurrentDeckStore } from '../stores/currentDeck'
 import { spreads } from '../data/spreads'
 
 const store = useCurrentDeckStore()
+const playBoundary = ref(null)
 
 // Called when a placed card is clicked.
 // flipCard toggles wrapper.faceDown, selectCard updates the card-selection panel.
@@ -71,11 +73,12 @@ function handleDealSpread(spreadName) {
       />
     </header>
     <main class="oracle-main">
-      <section class="play-area">
+      <section class="play-area" ref="playBoundary">
         <OracleCard
           v-for="wrapper in store.currentDeck.placedCards"
           :key="wrapper.card.title"
           :wrapper="wrapper"
+          :bounds="playBoundary"
           @flip="handleFlip"
           @drag-end="({ wrapper, x, y }) => store.updateCardPosition(wrapper, x, y)"
         />
