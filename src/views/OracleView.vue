@@ -81,7 +81,7 @@ function handleDealSpread(spreadName) {
         />
       </section>
 
-      <section class="deck-area">
+      <section class="deck-area" :class="{ hidden: !store.currentDeck.cards.length }">
         <OracleCard
           v-if="store.currentDeck.cards.length"
           :key="store.currentDeck.cards[store.currentDeck.cards.length - 1].card.title"
@@ -164,12 +164,16 @@ header {
   z-index: 10;
 }
 
+.deck-area.hidden {
+  display: none;
+}
+
 .card-selection {
   position: absolute;
   border-radius: 5px;
   bottom: 5%;
   right: 3%;
-  width: clamp(200px, 20vw, 300px);
+  width: clamp(200px, 20vw, 400px);
   height: 30%;
   border: 1px solid #b1c028;
   padding: 10px;

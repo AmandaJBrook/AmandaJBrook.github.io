@@ -1,6 +1,5 @@
 <script setup>
 import { vDraggable } from '@neodrag/vue'
-import { findAncestor } from 'typescript'
 import { ref } from 'vue'
 
 const props = defineProps({
@@ -23,12 +22,13 @@ const draggableOptions = {
     emit('drag-end', { wrapper: props.wrapper, x: offsetX, y: offsetY })
   },
 }
-
 const handleClick = () => {
   if (!isDragging.value) {
     emit('flip', props.wrapper)
   }
 }
+
+const imageLoaded = ref(true)
 </script>
 
 <template>
@@ -37,9 +37,9 @@ const handleClick = () => {
     class="oracle-card"
     :class="{
       reversed: wrapper.reversed,
-      faceDown: wrapper.faceDown,
+      'face-down': wrapper.faceDown,
       dragging: isDragging,
-      inDeck: inDeck,
+      'in-deck': inDeck,
     }"
     @click="handleClick"
   >
@@ -54,7 +54,16 @@ const handleClick = () => {
         </div>
       </div>
       <div class="card-face card-back">
-        <img :src="'/images/oracle-cards/back.png'" alt="Card Back" :draggable="false" />
+        <div v-if="!imageLoaded" class="card-loading">
+          <span class="spinner" />
+        </div>
+        <img
+          :src="'/images/oracle-cards/back.png'"
+          alt="Card Back"
+          :draggable="false"
+          :style="{ opacity: imageLoaded ? 1 : 0 }"
+          @load="imageLoaded = true"
+        />
       </div>
     </div>
   </div>
@@ -91,7 +100,7 @@ const handleClick = () => {
   transition: transform 0.6s ease;
 }
 
-.oracle-card.faceDown .card-inner {
+.oracle-card.face-down .card-inner {
   transform: rotateY(180deg);
 }
 
@@ -126,7 +135,7 @@ const handleClick = () => {
 
 .card-image-frame {
   width: 90px;
-  height: 110px;
+  height: 100px;
   margin: 20px auto 0;
   overflow: hidden;
 
@@ -140,7 +149,7 @@ const handleClick = () => {
 .card-text-frame {
   width: 90px;
   min-width: 0;
-  height: 30px;
+  height: 50px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -155,7 +164,7 @@ const handleClick = () => {
 .card-title {
   font-size: 12px;
   margin: 0;
-  line-height: 1.1;
+  line-height: 0.5;
   text-align: center;
   white-space: nowrap;
   transform: scale(0.5);
@@ -165,7 +174,6 @@ const handleClick = () => {
 .card-subtitle {
   font-size: 12px;
   margin: 0;
-  line-height: 1.1;
   text-align: center;
   white-space: nowrap;
   transform: scale(0.35);

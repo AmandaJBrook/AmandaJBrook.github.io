@@ -27,7 +27,7 @@ const depth = new OracleCard(
 const clarity = new OracleCard(
   '/images/oracle-cards/front/clarity.png',
   'Cleansing',
-  'Ruitual purification',
+  'Ritual purification',
   'Cleansing rituals can help you clear your mind and body of negative energy. This can be a physical ritual, such as taking a bath or going for a walk in nature, or a mental ritual, such as meditation or journaling.',
 )
 const occlusion = new OracleCard(
@@ -68,9 +68,9 @@ const scope = new OracleCard(
   'Change of perspective',
   'The solar and global weather patterns that influence the flow of energy on Earth. As is above, so below. The macrocosm reflects the microcosm, and vice versa.',
 )
-const voilition = new OracleCard(
-  '/images/oracle-cards/front/voilition.png',
-  'Voilition',
+const volition = new OracleCard(
+  '/images/oracle-cards/front/volition.png',
+  'Volition',
   'Wave of influence',
   'Commanding change with your own will. Internal cultivation breeds external transformation. ',
 )
@@ -80,9 +80,9 @@ const flood = new OracleCard(
   'Overflowing energy',
   'When you are flooded with energy, it can be overwhelming. Learn to channel and direct this energy in a way that is sustainable and beneficial.',
 )
-const distilation = new OracleCard(
-  '/images/oracle-cards/front/distilation.png',
-  'Distilation',
+const distillation = new OracleCard(
+  '/images/oracle-cards/front/distillation.png',
+  'Distillation',
   'Determine the essence',
   'The process of separating elements from a mixture. This can be a metaphor for the process of separating what is essential from what is not.',
 )
@@ -99,9 +99,9 @@ const oracleArray = [
   drain,
   ether,
   scope,
-  voilition,
+  volition,
   flood,
-  distilation,
+  distillation,
 ]
 
 export default oracleArray
