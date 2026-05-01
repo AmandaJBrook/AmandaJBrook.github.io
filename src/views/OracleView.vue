@@ -1,32 +1,64 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import MainNav from '../components/MainNav.vue'
 import OracleNav from '../components/OracleNav.vue'
 import OracleCard from '../components/OracleCard.vue'
-import { ref } from 'vue'
 import { useCurrentDeckStore } from '../stores/currentDeck'
-import { spreads } from '../data/spreads'
+import { spreads, CARD_HALF_W, CARD_HALF_H } from '../data/spreads'
+import type { CardWrapper, DragEndPayload, SpreadName } from '../types/oracle'
 
 const store = useCurrentDeckStore()
-const playBoundary = ref(null)
 
-// Called when a placed card is clicked.
-// flipCard toggles wrapper.faceDown, selectCard updates the card-selection panel.
-function handleFlip(wrapper) {
+// ─── Element refs ─────────────────────────────────────────────
+// Both refs are typed as HTMLElement | null because they are null
+// until Vue mounts the DOM. Any function that reads these must
+// null-check before use — TypeScript enforces this.
+
+// play-area: the droppable canvas where placed cards live.
+// Passed to placed OracleCards as the neodrag bounds element.
+// Also used to convert normalized spread coords to real pixels.
+const playAreaRef = ref<HTMLElement | null>(null)
+
+// deck-area: the draw pile container.
+// Used in onDeckDragEnd to get the deck's screen position,
+// which is needed to convert neodrag's offset coords to viewport coords.
+const deckAreaRef = ref<HTMLElement | null>(null)
+
+// ─── Flip handler ─────────────────────────────────────────────
+// Called when a placed card is clicked (not dragged).
+// flipCard toggles wrapper.faceDown, selectCard opens the detail panel.
+function handleFlip(wrapper: CardWrapper): void {
   store.flipCard(wrapper)
   store.selectCard(wrapper)
 }
 
-// Called when the top deck card is dragged.
-// Only draws the card if it was dropped inside the play-area boundary.
-// If dropped outside, neodrag resets the card visually since wrapper.position hasn't changed.
-function onDeckDragEnd({ wrapper, x, y }) {
-  const playArea = document.querySelector('.play-area')
-  const deckArea = document.querySelector('.deck-area')
+// ─── Deck drag handler ────────────────────────────────────────
+// Called when the top deck card is released after a drag.
+//
+// neodrag's offsetX/offsetY are relative to where the drag started
+// (the deck-area), not the viewport. To determine whether the drop
+// landed inside the play-area, we need absolute viewport coordinates.
+//
+// Coordinate conversion:
+//   absX = deckArea.left + offsetX   → viewport X of the drop point
+//   absY = deckArea.top  + offsetY   → viewport Y of the drop point
+//
+// If the drop is inside the play-area:
+//   store position as (absX - playArea.left, absY - playArea.top)
+//   so the card renders at the correct spot within play-area coords.
+//
+// If the drop is outside, reset the wrapper's position to (0,0)
+// so the next OracleCard mount (triggered by :key change) starts
+// flush inside deck-area.
+
+function onDeckDragEnd({ wrapper, x, y }: DragEndPayload): void {
+  const playArea = playAreaRef.value
+  const deckArea = deckAreaRef.value
+  if (!playArea || !deckArea) return
+
   const playRect = playArea.getBoundingClientRect()
   const deckRect = deckArea.getBoundingClientRect()
 
-  // neodrag offsetX/Y are relative to the element's start position,
-  // so we add the deck-area's screen position to get absolute coordinates.
   const absX = deckRect.left + x
   const absY = deckRect.top + y
 
@@ -37,27 +69,49 @@ function onDeckDragEnd({ wrapper, x, y }) {
     absY <= playRect.bottom
 
   if (inPlayArea) {
-    // Store position relative to play-area so the card renders at the drop point
+    // Convert viewport coords to play-area-relative coords and place the card.
     store.updateCardPosition(wrapper, absX - playRect.left, absY - playRect.top)
     store.currentDeck.placeCard(wrapper)
 
-    // Zero out the next top card's position so neodrag renders it
-    // flush inside deck-area and not at stale coordinates
+    // Reset the next top card's position to (0,0). This is necessary because
+    // the deck card's OracleCard instance is destroyed and recreated when
+    // :key changes (the new top card gets a fresh neodrag instance).
+    // Without this reset, neodrag would mount the new card at stale coords.
     const nextCard = store.currentDeck.cards[store.currentDeck.cards.length - 1]
     if (nextCard) store.updateCardPosition(nextCard, 0, 0)
   } else {
-    // If dropped outside play-area, reset position to deck-area via neodrag
     store.updateCardPosition(wrapper, 0, 0)
   }
 }
 
-function handleDealSpread(spreadName) {
+// ─── Spread deal handler ──────────────────────────────────────
+// Called by OracleNav when the user selects a named spread.
+//
+// Spread positions in spreads.ts are normalized (0.0–1.0).
+// We multiply by the play-area's real pixel dimensions here
+// so the layout is always centered correctly regardless of screen size.
+//
+// CARD_HALF_W and CARD_HALF_H offset each position so the card's
+// center lands on the intended point, not its top-left corner.
+//
+// store.placeFromSpread() sets position, label, and rotation on
+// the wrapper atomically before moving it to placedCards[].
+
+function handleDealSpread(spreadName: SpreadName): void {
+  const playArea = playAreaRef.value
+  if (!playArea) return
+
+  const { width, height } = playArea.getBoundingClientRect()
   const positions = spreads[spreadName]
+
   positions.forEach((pos) => {
     const wrapper = store.currentDeck.cards[store.currentDeck.cards.length - 1]
     if (!wrapper) return
-    store.updateCardPosition(wrapper, pos.x, pos.y)
-    store.currentDeck.placeCard(wrapper)
+
+    const pixelX = pos.x * width - CARD_HALF_W
+    const pixelY = pos.y * height - CARD_HALF_H
+
+    store.placeFromSpread(wrapper, pos, pixelX, pixelY)
   })
 }
 </script>
@@ -72,19 +126,29 @@ function handleDealSpread(spreadName) {
         ]"
       />
     </header>
+
     <main class="oracle-main">
-      <section class="play-area" ref="playBoundary">
+      <!-- Play area: the canvas where cards are placed.
+           ref is passed to placed OracleCards as their drag boundary. -->
+      <section class="play-area" ref="playAreaRef">
         <OracleCard
           v-for="wrapper in store.currentDeck.placedCards"
           :key="wrapper.card.title"
           :wrapper="wrapper"
-          :bounds="playBoundary"
+          :bounds="playAreaRef"
           @flip="handleFlip"
-          @drag-end="({ wrapper, x, y }) => store.updateCardPosition(wrapper, x, y)"
+          @drag-end="({ wrapper, x, y }: DragEndPayload) => store.updateCardPosition(wrapper, x, y)"
         />
       </section>
 
-      <section class="deck-area" :class="{ hidden: !store.currentDeck.cards.length }">
+      <!-- Deck area: shows the back of the top card in the draw pile.
+           The card is keyed by title so Vue remounts OracleCard
+           (and resets neodrag's internal state) each time the top card changes. -->
+      <section
+        class="deck-area"
+        ref="deckAreaRef"
+        :class="{ hidden: !store.currentDeck.cards.length }"
+      >
         <OracleCard
           v-if="store.currentDeck.cards.length"
           :key="store.currentDeck.cards[store.currentDeck.cards.length - 1].card.title"
@@ -95,14 +159,17 @@ function handleDealSpread(spreadName) {
         />
       </section>
 
-      <!-- Card detail panel — shown when a placed card is clicked -->
+      <!-- Card detail panel — shown when a placed card is clicked.
+           Displays the card's reading text and position label if set. -->
       <section class="card-selection" v-if="store.selectedCard">
         <h2>{{ store.selectedCard.card.title.toUpperCase() }}</h2>
-        <h3>{{ store.selectedCard.card.subtitle.toUpperCase() }}</h3>
+        <h3 v-if="store.selectedCard.label">{{ store.selectedCard.label.toUpperCase() }}</h3>
+        <h3 v-else>{{ store.selectedCard.card.subtitle.toUpperCase() }}</h3>
         <p>{{ store.selectedCard.card.description }}</p>
         <button @click="store.clearSelection">✕</button>
       </section>
     </main>
+
     <footer>
       <OracleNav
         @shuffle="store.shuffle"
