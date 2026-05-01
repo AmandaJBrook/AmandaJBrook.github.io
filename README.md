@@ -10,6 +10,10 @@ Personal portfolio and interactive oracle card reading app built with Vue 3. Ser
 - Draggable oracle card reading experience with multiple shuffle algorithms (riffle, overhand, Fisher-Yates, cut)
 - Reversal mode for upright/reversed card orientations
 - Preset spread layouts (Past · Present · Future, Celtic Cross, Me · Them · Us)
+  - Cards deal to screen-size-aware positions — spreads always center correctly regardless of viewport
+  - Spread position labels displayed on each placed card (e.g. "Past", "Challenge")
+  - Rotation support for specific spread positions (e.g. Celtic Cross Challenge card crosses at 90°)
+- Drag boundary enforcement — placed cards cannot be dragged outside the play area
 - Responsive layout with animated mobile navigation
 
 ## Tech Stack
@@ -17,6 +21,7 @@ Personal portfolio and interactive oracle card reading app built with Vue 3. Ser
 - [Vue 3](https://vuejs.org/) (Composition API) + [Vite](https://vite.dev/)
 - [Pinia](https://pinia.vuejs.org/) for oracle session state
 - [@neodrag/vue](https://www.neodrag.dev/) for card drag interaction
+- TypeScript — incremental adoption, oracle feature files converted first
 - SCSS with CSS custom properties for theming
 
 ## Project Structure
@@ -25,8 +30,9 @@ Personal portfolio and interactive oracle card reading app built with Vue 3. Ser
 src/
 ├── classes/         Data models (OracleCard, Deck, Painting, Design, Website)
 ├── components/      Reusable UI components (MainNav, ImageCarousel, OracleCard, OracleNav)
-├── data/            Static content arrays
+├── data/            Static content arrays and spread layout definitions
 ├── stores/          Pinia store — oracle deck state
+├── types/           Shared TypeScript interfaces (oracle.ts)
 ├── utils/shuffles/  Shuffle algorithm implementations
 └── views/           Page-level components (Home, OracleView, OracleLibrary)
 ```
@@ -63,7 +69,12 @@ npm run build
 npm run lint
 ```
 
+### Type Check
+
+```sh
+npm run type-check
+```
+
 ## In Progress
 
 - Oracle Library — card reference and meaning browser
-- Spread position labels for placed cards
