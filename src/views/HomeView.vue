@@ -1,10 +1,10 @@
-<script setup lang="js">
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Motion, useScroll, useTransform, useSpring, motionValue, frame } from 'motion-v'
+import { Motion, useScroll, useTransform, useSpring, motionValue } from 'motion-v'
 import MainNav from '@/components/MainNav.vue'
 import ImageCarousel from '@/components/ImageCarousel.vue'
 import paintingArray from '@/data/paintings.js'
-import designArray from '@/data/designs.js'
+import designArray from '@/data/designs.ts'
 import webArray from '@/data/websites.js'
 
 // ─── Background — manual log curve smoothed via Motion spring ──
@@ -23,7 +23,10 @@ const SPRING_CONFIG = { stiffness: 60, damping: 20 }
 const bgRawOffset = motionValue(0)
 const bgSmoothed = useSpring(bgRawOffset, SPRING_CONFIG)
 
-let bgImgEl, aboutEl, bgFactor, bgCancelFrame
+let bgImgEl: HTMLImageElement | null = null
+let aboutEl: HTMLElement | null = null
+let bgFactor: number | null = null
+let bgCancelFrame: (() => void) | null = null
 
 function onScroll() {
   if (!bgFactor) return
@@ -32,8 +35,9 @@ function onScroll() {
 }
 
 onMounted(() => {
-  bgImgEl = document.querySelector('#parallax-bg img')
-  aboutEl = document.querySelector('.about')
+  bgImgEl = document.querySelector<HTMLImageElement>('#parallax-bg img')
+  aboutEl = document.querySelector<HTMLElement>('.about')
+  if (!aboutEl) return
 
   const sectionBottom = aboutEl.offsetTop + aboutEl.offsetHeight
   const availableTravel = window.innerHeight * 3
@@ -71,7 +75,7 @@ const headerHeight = useSpring(rawHeaderHeight, { stiffness: 80, damping: 20 })
 //   0 = when the section's bottom hits the viewport's bottom (entering)
 //   1 = when the section's top hits the viewport's top (leaving)
 
-const aboutRef = ref(null)
+const aboutRef = ref<HTMLElement | null>(null)
 
 const { scrollYProgress } = useScroll({
   target: aboutRef,
@@ -101,7 +105,7 @@ const boundaryMarginTop = useTransform(scrollYProgress, [0, 1], ['120px', '0px']
          blocks in <style>. -->
     <Teleport to="body">
       <div class="parallax-stage" aria-hidden="true">
-        <div id="parallax-bg" class="parallax-layer parallax-layer--bg">
+        <div id="parallax-bg" class="parallax-layer parallax-layer-bg">
           <img src="/images/home/parallax/background.jpg" alt="" />
         </div>
       </div>
@@ -260,7 +264,7 @@ const boundaryMarginTop = useTransform(scrollYProgress, [0, 1], ['120px', '0px']
   }
 }
 
-:global(.parallax-layer--bg) {
+:global(.parallax-layer-bg) {
   inset: 0;
   z-index: 1;
   overflow: hidden;

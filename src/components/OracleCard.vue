@@ -58,6 +58,13 @@ const draggableOptions = computed(() => ({
   // undefined (not null) tells neodrag to skip bounds checking.
   bounds: props.bounds ?? undefined,
 
+  // cancel prevents these elements from initiating a drag when grabbed directly.
+  // Without this, clicking on an <img> or text node triggers the browser's
+  // native drag — which creates a ghost copy of the element instead of moving
+  // the card. The card root element still drags normally; these selectors only
+  // suppress initiation from within them.
+  cancel: '.card-image-frame, .card-text-frame',
+
   onDrag: () => {
     isDragging.value = true
   },
@@ -205,6 +212,8 @@ const rotationStyle = computed(() =>
   height: 100px;
   margin: 20px auto 0;
   overflow: hidden;
+  user-select: none;
+  pointer-events: none;
 
   img {
     width: 100%;
@@ -225,6 +234,8 @@ const rotationStyle = computed(() =>
   overflow: hidden;
   padding: 0 2px;
   box-sizing: border-box;
+  user-select: none;
+  pointer-events: none;
 }
 
 /* Scale trick to bypass browser minimum font size. */

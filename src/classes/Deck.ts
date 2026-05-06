@@ -9,14 +9,14 @@
 // to wrapper objects, so mutation is seen automatically.
 // ─────────────────────────────────────────────────────────────
 
-import type { OracleCardData, CardWrapper } from '../types/oracle'
+import type { OracleCardData, CardWrapper, ShuffleAlgorithm } from '../types/oracle'
 
 class Deck {
   name: string
   originalOrder: OracleCardData[]
   cards: CardWrapper[]
   placedCards: CardWrapper[]
-  shuffleHistory: { algorithm: string; timestamp: string }[]
+  shuffleHistory: { algorithm: ShuffleAlgorithm; timestamp: string }[]
 
   constructor(name: string, cards: OracleCardData[]) {
     this.name = name
@@ -34,8 +34,6 @@ class Deck {
       faceDown: true,
       reversed: false,
       position: { x: 0, y: 0 },
-      label: undefined,
-      rotation: undefined,
     }))
 
     this.placedCards = []
@@ -44,7 +42,7 @@ class Deck {
 
   // Records which shuffle algorithm was used and when.
   // Called by the store's shuffle() action after reordering cards[].
-  recordShuffle(algorithm: string): void {
+  recordShuffle(algorithm: ShuffleAlgorithm): void {
     this.shuffleHistory.push({
       algorithm,
       timestamp: new Date().toISOString(),

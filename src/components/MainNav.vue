@@ -80,15 +80,18 @@ const handleNavClick = (e: MouseEvent) => {
   isMobileMenuOpen.value = false
 }
 
-withDefaults(defineProps<{
-  links?: NavLink[]
-}>(), {
-  links: () => [
-    { label: 'portfolio', href: '#portfolio', type: 'anchor' as NavLinkType },
-    { label: 'about', href: '#about', type: 'anchor' as NavLinkType },
-    { label: 'contact', href: '#contact', type: 'anchor' as NavLinkType },
-  ],
-})
+withDefaults(
+  defineProps<{
+    links?: NavLink[]
+  }>(),
+  {
+    links: () => [
+      { label: 'about', href: '#about', type: 'anchor' as NavLinkType },
+      { label: 'portfolio', href: '#portfolio', type: 'anchor' as NavLinkType },
+      { label: 'contact', href: '#contact', type: 'anchor' as NavLinkType },
+    ],
+  },
+)
 </script>
 
 <template>
