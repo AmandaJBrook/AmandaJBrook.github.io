@@ -1,12 +1,24 @@
 <!-- This component is responsible for rendering the main navigation bar, including the logo and the
 hamburger menu for mobile devices. It uses a reactive variable to toggle the visibility of the menu
 on smaller screens. The navigation links are set up to close the menu when clicked, ensuring a smooth user experience on mobile devices. -->
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+
+// ─── Nav link shape ───────────────────────────────────────────
+// 'anchor'   — same-page hash link, uses smoothScroll
+// 'external' — off-site link, closes mobile menu on click
+// 'router'   — internal route, uses RouterLink
+type NavLinkType = 'anchor' | 'external' | 'router'
+
+interface NavLink {
+  label: string
+  href: string
+  type: NavLinkType
+}
 
 // Reactive variable to track whether the mobile menu is open or closed
 const isMobileMenuOpen = ref(false)
-const menuRef = ref(null)
+const menuRef = ref<HTMLElement | null>(null)
 const menuHeight = ref(0)
 const windowWidth = ref(window.innerWidth)
 
@@ -50,38 +62,32 @@ onUnmounted(() => {
 
 /* Smoothly scrolls to the target element when a nav link is clicked.
  */
-const smoothScroll = (e) => {
-  const href = e.target.getAttribute('href')
+const smoothScroll = (e: MouseEvent) => {
+  const target = e.target as HTMLAnchorElement
+  const href = target.getAttribute('href')
   if (!href || !href.startsWith('#')) return
   e.preventDefault()
-  const target = document.querySelector(href)
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth' })
+  const el = document.querySelector(href)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth' })
   }
 }
 
 /* Handles a nav link click event, smoothly scrolling to the target element and closing the mobile menu.
  */
-const handleNavClick = (e) => {
+const handleNavClick = (e: MouseEvent) => {
   smoothScroll(e)
   isMobileMenuOpen.value = false
 }
 
-defineProps({
-  links: {
-    type: Array,
-    /*
-     * Default value for the links prop.
-     * Returns an array of three objects, each with the keys label, href, and type.
-     * The objects represent the links for the portfolio, about, and contact sections respectively.
-     * The href values are all anchor links, pointing to the corresponding sections on the page.
-     */
-    default: () => [
-      { label: 'portfolio', href: '#portfolio', type: 'anchor' },
-      { label: 'about', href: '#about', type: 'anchor' },
-      { label: 'contact', href: '#contact', type: 'anchor' },
-    ],
-  },
+withDefaults(defineProps<{
+  links?: NavLink[]
+}>(), {
+  links: () => [
+    { label: 'portfolio', href: '#portfolio', type: 'anchor' as NavLinkType },
+    { label: 'about', href: '#about', type: 'anchor' as NavLinkType },
+    { label: 'contact', href: '#contact', type: 'anchor' as NavLinkType },
+  ],
 })
 </script>
 
