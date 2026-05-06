@@ -14,12 +14,16 @@ import { defineStore } from 'pinia'
 import Deck from '@/classes/Deck'
 import oracleArray from '@/data/oracle-cards.js'
 import { fisherYates, riffle, overhand, cut } from '@/utils/shuffles/index.js'
-import type { CardWrapper, SpreadPosition, ShuffleAlgorithm } from '@/types/oracle'
+import type { CardWrapper, OracleCardData, SpreadPosition, ShuffleAlgorithm } from '@/types/oracle'
+
+// Shuffle functions all share this signature: take the current card array
+// and a reversalMode flag, return a reordered array of the same wrappers.
+type ShufflerFn = (cards: CardWrapper[], reversalMode: boolean) => CardWrapper[]
 
 // Maps ShuffleAlgorithm string keys to their implementation functions.
 // To add a new algorithm: add the utility to shuffles/index.js,
 // add its key to ShuffleAlgorithm in types/oracle.ts, then add it here.
-const shufflers: Record<ShuffleAlgorithm, Function> = {
+const shufflers: Record<ShuffleAlgorithm, ShufflerFn> = {
   riffle,
   overhand,
   'fisher-yates': fisherYates,
@@ -34,7 +38,7 @@ export const useCurrentDeckStore = defineStore('currentDeck', () => {
 
   // Replaces the active deck entirely. Used when switching between
   // different card sets (e.g. oracle library selection).
-  function setDeck(name: string, cardsArray: any[]): void {
+  function setDeck(name: string, cardsArray: OracleCardData[]): void {
     currentDeck.value = new Deck(name, cardsArray)
   }
 
@@ -63,8 +67,6 @@ export const useCurrentDeckStore = defineStore('currentDeck', () => {
       faceDown: true,
       reversed: false,
       position: { x: 0, y: 0 },
-      label: undefined,
-      rotation: undefined,
     }))
     currentDeck.value.reset(shufflers[lastAlgorithm.value](freshWrappers, reversalMode.value))
   }
