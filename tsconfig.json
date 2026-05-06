@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["esnext", "dom"],
+
+    // Enables .vue file support via vue-tsc
+    "jsx": "preserve",
+
+    // Strict mode — catches the class of bugs that make TS worthwhile.
+    // Enables: noImplicitAny, strictNullChecks, strictFunctionTypes, etc.
+    "strict": true,
+
+    // Allows default imports from modules with no default export (e.g. some libs)
+    "allowSyntheticDefaultImports": true,
+
+    // Required for Vue's <script setup> and decorator patterns
+    "experimentalDecorators": true,
+
+    // Resolves @/ to src/ — matches Vite's alias configured in vite.config.js
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "ignoreDeprecations": "6.0",
+
+    // Ensures .ts files output alongside .vue — needed for vue-tsc
+    "noEmit": true,
+
+    // Catches files that are referenced but not included in the compilation
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["node_modules"]
+}
