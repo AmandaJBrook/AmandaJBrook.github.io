@@ -60,17 +60,28 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
 
+// Nav height is always 60px in its final resting state — used as
+// the scroll offset so anchor targets aren't hidden behind the nav.
+const NAV_HEIGHT = 60
+
 /* Smoothly scrolls to the target element when a nav link is clicked.
+ *
+ * getBoundingClientRect() reads the element's position in the current
+ * viewport at click time — after the header spring has settled —
+ * then converts it to a document-absolute Y by adding window.scrollY.
+ * Subtracting NAV_HEIGHT ensures the section's top padding lands flush
+ * below the nav bar rather than behind it.
  */
 const smoothScroll = (e: MouseEvent) => {
   const target = e.target as HTMLAnchorElement
   const href = target.getAttribute('href')
   if (!href || !href.startsWith('#')) return
   e.preventDefault()
-  const el = document.querySelector(href)
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth' })
-  }
+  const el = document.querySelector<HTMLElement>(href)
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const targetY = rect.top + window.scrollY - NAV_HEIGHT
+  window.scrollTo({ top: targetY, behavior: 'smooth' })
 }
 
 /* Handles a nav link click event, smoothly scrolling to the target element and closing the mobile menu.
