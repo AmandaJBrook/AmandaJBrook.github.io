@@ -3,9 +3,9 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { Motion, useScroll, useTransform, useSpring, motionValue } from 'motion-v'
 import MainNav from '@/components/MainNav.vue'
 import ImageCarousel from '@/components/ImageCarousel.vue'
-import paintingArray from '@/data/paintings.ts'
-import designArray from '@/data/designs.ts'
-import webArray from '@/data/websites.ts'
+import paintingArray from '@/data/paintings'
+import designArray from '@/data/designs'
+import webArray from '@/data/websites'
 
 // ─── Spring config ────────────────────────────────────────────
 const SPRING_CONFIG = { stiffness: 60, damping: 20 }
@@ -14,28 +14,23 @@ const SPRING_CONFIG = { stiffness: 60, damping: 20 }
 const bgRawOffset = motionValue(0)
 const bgSmoothed = useSpring(bgRawOffset, SPRING_CONFIG)
 
-// DOM references
+// DOM references — must be `let` so onMounted can assign them
 let bgImgEl: HTMLImageElement | null = null
 let aboutEl: HTMLElement | null = null
+let bgCancelFrame: (() => void) | null = null
 
-// Reactive tracking for viewport height (replaces window.innerHeight)
+// Reactive tracking for viewport height
 const viewportHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 0)
 
 let bgMaxTravel: number = 0
 let bgScrollEnd: number = 0
-let bgCancelFrame: (() => void) | null = null
 
 // ─── computeBgFactor ──────────────────────────────────────────
-// Updated to use the locally tracked viewportHeight value.
+// bgMaxTravel is viewport-relative to avoid ResizeObserver feedback loops.
 function computeBgFactor(): void {
-  if (!aboutEl || !bgImgEl) return
-
-  const renderedH = bgImgEl.naturalHeight * (window.innerWidth / bgImgEl.naturalWidth)
-  const imgStartBottom = renderedH + viewportHeight.value / 2
-  const sectionBottom = aboutEl.offsetTop + aboutEl.offsetHeight
-
-  bgMaxTravel = Math.max(0, imgStartBottom - sectionBottom)
-  bgScrollEnd = sectionBottom
+  if (!aboutEl) return
+  bgMaxTravel = viewportHeight.value * 0.4
+  bgScrollEnd = aboutEl.offsetTop + aboutEl.offsetHeight
 }
 
 // ─── onScroll ─────────────────────────────────────────────────
@@ -45,7 +40,16 @@ function onScroll(): void {
   bgRawOffset.set(progress * bgMaxTravel)
 }
 
-let resizeObserver: ResizeObserver | null = null
+// ─── Window resize handler ────────────────────────────────────
+// Using window 'resize' instead of ResizeObserver prevents the feedback
+// loop where bgImgEl's translateY causes a body resize → recompute → jitter.
+const handleWindowResize = () => {
+  viewportHeight.value = window.innerHeight
+  computeBgFactor()
+  if (bgImgEl) {
+    bgImgEl.style.transform = `translateY(${viewportHeight.value * 0.15 - bgSmoothed.get()}px)`
+  }
+}
 
 // ─── onMounted ────────────────────────────────────────────────
 onMounted(() => {
@@ -53,7 +57,6 @@ onMounted(() => {
   aboutEl = document.querySelector<HTMLElement>('.about')
   if (!aboutEl) return
 
-  // Set initial viewportHeight before performing calculations
   viewportHeight.value = window.innerHeight
 
   if (bgImgEl?.complete) {
@@ -62,30 +65,20 @@ onMounted(() => {
     bgImgEl?.addEventListener('load', computeBgFactor, { once: true })
   }
 
-  // Refactored listener to utilize viewportHeight variable during transform writes
+  // 0.15 = 15% of viewport height initial offset. Lower = image starts higher.
   bgCancelFrame = bgSmoothed.on('change', (v) => {
-    if (bgImgEl) bgImgEl.style.transform = `translateY(${viewportHeight.value / 2 - v}px)`
+    if (bgImgEl) bgImgEl.style.transform = `translateY(${viewportHeight.value * 0.15 - v}px)`
   })
 
-  // ResizeObserver handles viewport updates cleanly, forcing factor and style re-evaluations
-  resizeObserver = new ResizeObserver(() => {
-    viewportHeight.value = window.innerHeight
-    computeBgFactor()
-    // Re-trigger visual alignment calculation safely on resize events
-    if (bgImgEl) {
-      bgImgEl.style.transform = `translateY(${viewportHeight.value / 2 - bgSmoothed.get()}px)`
-    }
-  })
-  resizeObserver.observe(document.body)
-
+  window.addEventListener('resize', handleWindowResize)
   window.addEventListener('scroll', onScroll, { passive: true })
 })
 
 // ─── onUnmounted ──────────────────────────────────────────────
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('resize', handleWindowResize)
   bgCancelFrame?.()
-  resizeObserver?.disconnect()
 })
 
 // ─── Header height — shrinks from 100vh → 50vh on scroll ─────
@@ -101,11 +94,16 @@ const aboutRef = ref<HTMLElement | null>(null)
 
 const { scrollYProgress } = useScroll({
   target: aboutRef,
-  offset: ['end end', 'start start'],
+  // 'start end' → 'end start': tracks the section across the full viewport
+  // scroll-through so figures rise smoothly rather than snapping at the end.
+  offset: ['start end', 'end start'],
 })
 
-const rawMgY = useTransform(scrollYProgress, [0, 1], ['120px', '0px'])
-const rawFgY = useTransform(scrollYProgress, [0, 1], ['200px', '0px'])
+// Both figures start at 200px so their bottoms are aligned when
+// nav-jumping directly to the section. Foreground travels to -30px
+// for parallax depth separation on scroll.
+const rawMgY = useTransform(scrollYProgress, [0, 1], ['200px', '0px'])
+const rawFgY = useTransform(scrollYProgress, [0, 1], ['200px', '-30px'])
 const mgY = useSpring(rawMgY, SPRING_CONFIG)
 const fgY = useSpring(rawFgY, SPRING_CONFIG)
 </script>
@@ -124,12 +122,12 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
       </div>
     </Teleport>
 
-    <!-- 💡 FIXED INTERACTIVE CONTAINER: Contains ONLY the menu links -->
+    <!-- FIXED INTERACTIVE CONTAINER: Contains ONLY the menu links -->
     <header class="global-navbar">
       <MainNav />
     </header>
 
-    <!-- 💡 SCROLLING HERO VISUAL: Houses the star gif and the fade mask -->
+    <!-- SCROLLING HERO VISUAL: Houses the star gif and the fade mask -->
     <Motion as="div" class="hero-visual-stage" :style="{ height: headerHeight }">
       <Motion
         as="h1"
@@ -181,23 +179,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
             <source srcset="/images/home/Self-Portrait.jpg" type="image/jpg" />
             <img loading="lazy" src="/images/home/Self-Portrait.jpg" alt="Artist's Portrait" />
           </picture>
-          <!-- the text will use this to seem to flow around the midground image. must come before the text to wrap -->
-          <!-- marginTop is driven by the same scrollYProgress as mgY so the
-               shape-outside boundary tracks the midground's rise in real time,
-               causing the text to reflow in sync with the parallax. -->
-          <Motion as="div" class="midground-text-boundary" :style="{ y: boundaryMarginTop }" />
-          <!-- Ghost float — invisible, same PNG as .about-foreground.
-          Browser reuses the cached image. shape-outside: url() reads
-          the alpha channel so text wraps the figure's silhouette exactly.
-          y mirrors fgY so it tracks the foreground rise in lockstep. -->
-          <Motion
-            as="img"
-            class="foreground-ghost"
-            src="/images/home/parallax/foreground.png"
-            alt=""
-            aria-hidden="true"
-            :style="{ y: fgY }"
-          />
+
           <p>
             <em>I'm Amanda.</em><br />
             This website serves as a home for my portfolio and personal projects.
@@ -207,6 +189,13 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
             <a href="idea-garden.html">Idea Garden</a> for experimental projects and works in
             progress.
           </p>
+
+          <!-- Midground boundary — placed AFTER paragraphs so it only blocks
+               text that would spill into the midground zone below.
+               Shares mgY so it rises in lockstep with .about-midground.
+               shape-outside: url() reads the PNG alpha channel so text wraps
+               the midground's actual silhouette edge, not a rectangle. -->
+          <Motion as="div" class="midground-boundary" :style="{ y: mgY }" />
         </Motion>
 
         <!-- Figures driven by Motion useTransform — style bound to mgY/fgY.
@@ -283,8 +272,8 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   overflow: hidden;
 
   // JAVASCRIPT DEPENDENCY: This element has its transform overwritten
-  // directly via script loops (bgSmoothed.on('change')). Do not add standard
-  // CSS transitions or transforms here, or they will fight the Javascript updates.
+  // directly via script (bgSmoothed.on('change')). Do not add standard
+  // CSS transitions or transforms here — they will fight the JS updates.
   img {
     width: 100vw;
     height: 100vh;
@@ -321,7 +310,8 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   background: transparent;
 }
 
-// ─── The Hero Visual Stage (Restoring Typography Styles) ───────
+// ─── Hero Visual Stage ────────────────────────────────────────
+
 .hero-visual-stage {
   grid-area: header;
   position: relative;
@@ -330,7 +320,6 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   background: url('/images/home/parallax/stars.gif') center / auto repeat;
   mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
 
-  // 💡 FIX HERE: Changed 'h1' to targeting titles directly inside the visual container
   h1 {
     font-family: var(--serif-typeface);
     font-size: 3rem;
@@ -341,7 +330,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
     text-decoration: none;
     margin: 0;
     padding-bottom: 10px;
-    padding-top: 35%;
+    padding-top: 40vh;
   }
 
   h2 {
@@ -379,10 +368,13 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
     'about-content about-content';
   align-content: start;
   position: relative;
-  min-height: 80vh;
-  padding: 30px 50px;
+  min-height: 60vh;
+
+  // Bottom padding reserves space above the midground so text never
+  // overlaps it regardless of content length. Tune to midground image height.
+  padding: 30px 50px 220px;
   background-color: transparent;
-  isolation: isolate; /* NATIVE CSS: Creates local stacking layer context */
+  isolation: isolate;
 }
 
 .about-heading {
@@ -395,16 +387,20 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
 
 .about-content {
   grid-area: about-content;
-  position: relative;
+  position: absolute;
+
+  // No flex/grid here — floats require a block formatting context to work.
   z-index: 2;
 
+  // Portrait photo — floated left with ellipse shape-outside so text
+  // wraps the circular crop rather than the rectangular box.
   img {
     float: left;
     width: 150px;
     padding: 20px;
     border-radius: 50%;
     object-fit: cover;
-    shape-outside: ellipse(120px 133px at 49.95% 50.03%); /* NATIVE CSS: Flows text into shapes */
+    shape-outside: ellipse(120px 133px at 49.95% 50.03%);
     -webkit-user-drag: none;
   }
 
@@ -415,49 +411,29 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
     max-width: 500px;
   }
 
-  // MOTION-V DEPENDENCY: The position is altered live by your script boundaryMarginTop variable.
-  .midground-text-boundary {
+  // MOTION-V DEPENDENCY: Shares mgY spring with .about-midground so it
+  // tracks the midground's vertical position in lockstep.
+  // Placed AFTER paragraphs in the DOM so it only affects text that
+  // would otherwise spill below into the midground zone.
+  // shape-outside: url() reads the PNG alpha for a silhouette-accurate boundary.
+  // Tune height until the boundary top aligns with the midground image top edge.
+  .midground-boundary {
     float: right;
-    width: 45vw;
-    height: 100%;
-    z-index: 3;
-    shape-outside: polygon(
-      12% 50%,
-      23% 43%,
-      24.5% 31%,
-      43% 20%,
-      65.5% 18.5%,
-      80.5% 1%,
-      99.5% 26%,
-      94.5% 87.5%,
-      21% 91%,
-      1% 77.5%,
-      17.5% 64.5%
-    );
-    margin-left: 0;
-  }
-
-  // MOTION-V DEPENDENCY: The translateY is actively controlled by the fgY script value.
-  .foreground-ghost {
-    float: left;
-    width: 25vw;
-    height: auto;
-    margin-left: -15vw;
-    shape-outside: url('/images/home/parallax/foreground.png');
-    clip-path: url('/images/home/parallax/foreground.png');
-    opacity: 0;
+    clear: right;
+    width: 100%;
+    height: 40vh;
+    shape-outside: url('/images/home/parallax/midground.png');
     pointer-events: none;
-    -webkit-user-drag: none;
   }
 }
 
-// MOTION-V DEPENDENCY: Both figures below use bottom: 0 to anchor their position,
-// while their visual scrolling motion relies entirely on Motion applying inline style transforms.
+// MOTION-V DEPENDENCY: Both figures use bottom: 0 to anchor their base position.
+// Visual parallax motion is applied entirely via Motion inline style transforms.
 .about-midground {
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 100%;
+  width: 100vw;
   z-index: 1;
 
   img {
@@ -485,8 +461,10 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
 
 .portfolio {
   padding: 30px 50px;
-  background-color: transparent;
+  background-color: black;
   min-height: 50vh;
+  will-change: opacity, transform;
+  transform: translateZ(0);
 }
 
 // ─── Footer ───────────────────────────────────────────────────
@@ -499,7 +477,7 @@ footer {
   z-index: 3;
   margin: 0 auto;
   padding: 30px 0;
-  background-color: transparent;
+  background-color: black;
 }
 
 footer p {
@@ -516,12 +494,16 @@ footer a {
   display: none;
 }
 
-// ─── Responsive (Native CSS Media Queries) ────────────────────
+// ─── Responsive ───────────────────────────────────────────────
 
 @media (width >= 37.5em) {
   .about,
   .portfolio {
-    padding: 30px 50px;
+    padding: 30px 50px 220px;
+  }
+
+  .about {
+    min-height: 70vh;
   }
 
   .about-content img {
@@ -539,16 +521,15 @@ footer a {
     width: 80%;
   }
 
-  // DESIGN NOTE: This matches layout widths layout shapes to responsive break markers.
-  .midground-text-boundary {
-    width: 20vw;
-    height: 50%;
+  .midground-boundary {
+    height: 35vh;
   }
 }
 
 @media (width >= 64em) {
   .about {
     grid-template-columns: 1fr 1fr;
+    min-height: 80vh;
   }
 
   .about-content {
