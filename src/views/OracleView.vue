@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import MainNav from '../components/MainNav.vue'
 import OracleNav from '../components/OracleNav.vue'
 import OracleCard from '../components/OracleCard.vue'
@@ -23,6 +23,27 @@ const playAreaRef = ref<HTMLElement | null>(null)
 // Used in onDeckDragEnd to get the deck's screen position,
 // which is needed to convert neodrag's offset coords to viewport coords.
 const deckAreaRef = ref<HTMLElement | null>(null)
+
+// ─── Card detail panel drop-up ────────────────────────────────
+// Mirrors the MainNav mobile menu pattern but inverted:
+// the panel is bottom-anchored, so height growth pushes content upward.
+// isDetailOpen tracks the <details> open state via the 'toggle' event.
+// detailBodyRef measures the inner content height on open so we can
+// drive a smooth CSS height transition instead of the browser's instant snap.
+const isDetailOpen = ref(false)
+const detailBodyRef = ref<HTMLElement | null>(null)
+const detailBodyHeight = ref(0)
+
+watch(isDetailOpen, async (newVal) => {
+  if (newVal) {
+    await nextTick()
+    if (detailBodyRef.value) {
+      detailBodyHeight.value = detailBodyRef.value.scrollHeight
+    }
+  } else {
+    detailBodyHeight.value = 0
+  }
+})
 
 // ─── Flip handler ─────────────────────────────────────────────
 // Called when a placed card is clicked (not dragged).
@@ -160,14 +181,32 @@ function handleDealSpread(spreadName: SpreadName): void {
       </section>
 
       <!-- Card detail panel — shown when a placed card is clicked.
-           Displays the card's reading text and position label if set. -->
-      <section class="card-selection" v-if="store.selectedCard">
-        <h2>{{ store.selectedCard.card.title.toUpperCase() }}</h2>
-        <h3 v-if="store.selectedCard.label">{{ store.selectedCard.label.toUpperCase() }}</h3>
-        <h3 v-else>{{ store.selectedCard.card.subtitle.toUpperCase() }}</h3>
-        <p>{{ store.selectedCard.card.description }}</p>
-        <button @click="store.clearSelection">✕</button>
-      </section>
+           Displays the card's reading text and position label if set.
+           Uses a drop-up pattern: <details> is bottom-anchored, so
+           measuring and transitioning the body height pushes content upward. -->
+      <details
+        class="card-selection"
+        v-if="store.selectedCard"
+        @toggle="(e) => (isDetailOpen = (e.target as HTMLDetailsElement).open)"
+      >
+        <summary class="card-selection-summary">
+          <span class="summary-title">{{ store.selectedCard.card.title.toUpperCase() }}</span>
+          <span class="summary-chevron" :class="{ open: isDetailOpen }">&#x2039;</span>
+          <button class="close-btn" @click.stop="store.clearSelection">✕</button>
+        </summary>
+
+        <div
+          class="card-selection-body"
+          ref="detailBodyRef"
+          :style="{ height: detailBodyHeight + 'px' }"
+        >
+          <div class="card-selection-inner">
+            <h3 v-if="store.selectedCard.label">{{ store.selectedCard.label.toUpperCase() }}</h3>
+            <h3 v-else>{{ store.selectedCard.card.subtitle.toUpperCase() }}</h3>
+            <p>{{ store.selectedCard.card.description }}</p>
+          </div>
+        </div>
+      </details>
     </main>
 
     <footer>
@@ -244,17 +283,81 @@ header {
   bottom: 5%;
   right: 3%;
   width: clamp(200px, 20vw, 400px);
-  height: 30%;
   border: 1px solid #b1c028;
-  padding: 10px;
   box-sizing: border-box;
-  overflow-y: auto;
   color: white;
+
+  /* Prevent the browser's default <details> marker */
+  list-style: none;
 }
 
-.card-selection h2 {
-  margin: 0 0 4px;
+/* Remove the default disclosure triangle */
+.card-selection > summary {
+  list-style: none;
+}
+
+.card-selection > summary::-webkit-details-marker {
+  display: none;
+}
+
+.card-selection-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.summary-title {
   font-size: 0.85rem;
+  flex: 1;
+  margin: 0;
+  font-family: var(--serif-typeface, serif);
+  letter-spacing: 0.08em;
+}
+
+/* Chevron rotates 90° when open, pointing upward */
+.summary-chevron {
+  display: inline-block;
+  font-size: 1.4rem;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 0.3s ease;
+  opacity: 0.7;
+}
+
+.summary-chevron.open {
+  transform: rotate(-90deg);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 2px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
+
+/* The animated body — height transitions from 0 to measured scrollHeight.
+   overflow: hidden clips content during the transition. */
+.card-selection-body {
+  height: 0;
+  overflow: hidden;
+  transition: height 0.3s ease-in;
+}
+
+.card-selection-inner {
+  padding: 0 10px 10px;
+  overflow-y: auto;
+  max-height: 200px;
 }
 
 .card-selection h3 {
@@ -267,17 +370,6 @@ header {
   margin: 0;
   font-size: 0.75rem;
   line-height: 1.4;
-}
-
-.card-selection button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  font-size: 1rem;
 }
 
 footer {
