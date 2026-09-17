@@ -77,13 +77,24 @@ const smoothScroll = (e: MouseEvent) => {
   const href = target.getAttribute('href')
   if (!href || !href.startsWith('#')) return
   e.preventDefault()
+
   const el = document.querySelector<HTMLElement>(href)
   if (!el) return
-  const rect = el.getBoundingClientRect()
-  const targetY = rect.top + window.scrollY - NAV_HEIGHT
+
+  const stableAncestor = el.closest<HTMLElement>('section, article, main, footer') ?? el
+
+  // The hero-visual-stage springs from 100vh → 50vh as the user scrolls.
+  // By the time we've scrolled to .about, it will have fully collapsed.
+  // If we're currently at the top (hero not yet collapsed), we must subtract
+  // the ~50vh it will shed so our target lands correctly after the layout shift.
+  const heroEl = document.querySelector<HTMLElement>('.hero-visual-stage')
+  const heroCollapse = heroEl ? heroEl.getBoundingClientRect().height - window.innerHeight * 0.5 : 0
+
+  const rect = stableAncestor.getBoundingClientRect()
+  const targetY = rect.top + window.scrollY - NAV_HEIGHT - Math.max(0, heroCollapse)
+
   window.scrollTo({ top: targetY, behavior: 'smooth' })
 }
-
 /* Handles a nav link click event, smoothly scrolling to the target element and closing the mobile menu.
  */
 const handleNavClick = (e: MouseEvent) => {
