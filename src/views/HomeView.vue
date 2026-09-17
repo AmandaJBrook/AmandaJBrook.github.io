@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { Motion, useScroll, useTransform, useSpring, motionValue } from 'motion-v'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { Motion, useScroll, useTransform, useSpring } from 'motion-v'
 import MainNav from '@/components/MainNav.vue'
 import ImageCarousel from '@/components/ImageCarousel.vue'
 import paintingArray from '@/data/paintings'
@@ -10,77 +10,6 @@ import webArray from '@/data/websites'
 // ─── Spring config ────────────────────────────────────────────
 const SPRING_CONFIG = { stiffness: 60, damping: 20 }
 
-// ─── Background parallax — raw value + smoothed spring ────────
-const bgRawOffset = motionValue(0)
-const bgSmoothed = useSpring(bgRawOffset, SPRING_CONFIG)
-
-// DOM references — must be `let` so onMounted can assign them
-let bgImgEl: HTMLImageElement | null = null
-let aboutEl: HTMLElement | null = null
-let bgCancelFrame: (() => void) | null = null
-
-// Reactive tracking for viewport height
-const viewportHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 0)
-
-let bgMaxTravel: number = 0
-let bgScrollEnd: number = 0
-
-// ─── computeBgFactor ──────────────────────────────────────────
-// bgMaxTravel is viewport-relative to avoid ResizeObserver feedback loops.
-function computeBgFactor(): void {
-  if (!aboutEl) return
-  bgMaxTravel = viewportHeight.value * 0.4
-  bgScrollEnd = aboutEl.offsetTop + aboutEl.offsetHeight
-}
-
-// ─── onScroll ─────────────────────────────────────────────────
-function onScroll(): void {
-  if (!bgScrollEnd) return
-  const progress = Math.min(Math.max(window.scrollY / bgScrollEnd, 0), 1)
-  bgRawOffset.set(progress * bgMaxTravel)
-}
-
-// ─── Window resize handler ────────────────────────────────────
-// Using window 'resize' instead of ResizeObserver prevents the feedback
-// loop where bgImgEl's translateY causes a body resize → recompute → jitter.
-const handleWindowResize = () => {
-  viewportHeight.value = window.innerHeight
-  computeBgFactor()
-  if (bgImgEl) {
-    bgImgEl.style.transform = `translateY(${viewportHeight.value * 0.15 - bgSmoothed.get()}px)`
-  }
-}
-
-// ─── onMounted ────────────────────────────────────────────────
-onMounted(() => {
-  bgImgEl = document.querySelector<HTMLImageElement>('#parallax-bg img')
-  aboutEl = document.querySelector<HTMLElement>('.about')
-  if (!aboutEl) return
-
-  viewportHeight.value = window.innerHeight
-
-  if (bgImgEl?.complete) {
-    computeBgFactor()
-  } else {
-    bgImgEl?.addEventListener('load', computeBgFactor, { once: true })
-  }
-
-  // 0.15 = 15% of viewport height initial offset. Lower = image starts higher.
-  bgCancelFrame = bgSmoothed.on('change', (v) => {
-    if (bgImgEl) bgImgEl.style.transform = `translateY(${viewportHeight.value * 0.15 - v}px)`
-  })
-
-  window.addEventListener('resize', handleWindowResize)
-  window.addEventListener('scroll', onScroll, { passive: true })
-})
-
-// ─── onUnmounted ──────────────────────────────────────────────
-onUnmounted(() => {
-  window.removeEventListener('scroll', onScroll)
-  window.removeEventListener('resize', handleWindowResize)
-  bgCancelFrame?.()
-})
-
 // ─── Header height — shrinks from 100vh → 50vh on scroll ─────
 const { scrollY } = useScroll()
 const rawHeaderHeight = useTransform(scrollY, [0, 300], ['100vh', '50vh'])
@@ -89,39 +18,72 @@ const headerHeight = useSpring(rawHeaderHeight, { stiffness: 80, damping: 20 })
 // ─── Header text opacity — fades out on scroll ────────────────
 const headerTextOpacity = useTransform(scrollY, [0, 200], [1, 0])
 
-// ─── Foreground and midground figures ─────────────────────────
+// ─── Background, midground, and foreground figures ──────────
 const aboutRef = ref<HTMLElement | null>(null)
 
 const { scrollYProgress } = useScroll({
   target: aboutRef,
-  // 'start end' → 'end start': tracks the section across the full viewport
-  // scroll-through so figures rise smoothly rather than snapping at the end.
-  offset: ['start end', 'end start'],
+  // 1 when .about's bottom reaches the viewport's bottom — i.e. the instant
+  // the section's bottom (and the bottom-anchored figures) start coming into view.
+  offset: ['start end', 'end end'],
 })
 
-// Both figures start at 200px so their bottoms are aligned when
-// nav-jumping directly to the section. Foreground travels to -30px
-// for parallax depth separation on scroll.
+// scrollYProgress is a fraction of .about's OWN rendered height (0 = about's
+// top touches viewport bottom, 1 = about's bottom touches viewport bottom).
+// On narrow/short viewports .about's height is a much larger fraction of the
+// viewport, so that whole window is short in real pixels — meaning a fixed
+// *fraction* of it (like the old [0, 0.12, 0.45, 1] breakpoints) represents
+// wildly different amounts of actual scrolling on different devices. That's
+// what was causing the background to already look "arrived" at the top of
+// the page on narrow viewports, no matter how large the starting offset was.
+//
+// Fix: measure .about's real height live, and define the hold/ramp points as
+// fixed pixel distances, converting to fractions only at the point of use —
+// so "starts easing in 550px before .about ends" means the same 550px of
+// scroll on every device.
+const aboutHeight = ref(0)
+let aboutResizeObserver: ResizeObserver | null = null
+onMounted(() => {
+  if (aboutRef.value) {
+    aboutResizeObserver = new ResizeObserver((entries) => {
+      aboutHeight.value = entries[0].contentRect.height
+    })
+    aboutResizeObserver.observe(aboutRef.value)
+  }
+})
+onBeforeUnmount(() => aboutResizeObserver?.disconnect())
+
+const BG_HOLD_PX = 150 // hold near its starting offset for this many px of scroll
+const BG_RAMP_PX = 550 // then ease in over this many px, finishing exactly at about's end
+
+// The background keeps the same .about bottom anchor as the mid/foreground,
+// but its start position is viewport-aware so it begins higher in the page
+// while still ending aligned to the section bottom.
+const bgCurveProgress = useTransform([scrollYProgress], ([p]: number[]) => {
+  const h = aboutHeight.value || 1
+  const holdFrac = Math.min(BG_HOLD_PX / h, 0.3)
+  const rampStartFrac = Math.min(Math.max(1 - BG_RAMP_PX / h, holdFrac + 0.01), 0.95)
+  if (p <= holdFrac) return 0
+  if (p >= 1) return 1
+  if (p <= rampStartFrac) {
+    return ((p - holdFrac) / (rampStartFrac - holdFrac)) * 0.8
+  }
+  return 0.8 + ((p - rampStartFrac) / (1 - rampStartFrac)) * 0.2
+})
+// Now that the underlying progress curve is pixel-consistent, the large 110%
+// starting offset was compensating for the bug rather than reflecting the
+// intended composition — you'll likely want to dial this back down (try 70%
+// first) once you confirm the creeping/starting-too-low behavior is gone.
+const rawBgY = useTransform(bgCurveProgress, [0, 1], ['110%', '0px'])
 const rawMgY = useTransform(scrollYProgress, [0, 1], ['200px', '0px'])
-const rawFgY = useTransform(scrollYProgress, [0, 1], ['200px', '-30px'])
+const rawFgY = useTransform(scrollYProgress, [0, 1], ['200px', '0px'])
+const bgY = useSpring(rawBgY, SPRING_CONFIG)
 const mgY = useSpring(rawMgY, SPRING_CONFIG)
 const fgY = useSpring(rawFgY, SPRING_CONFIG)
 </script>
 
 <template>
   <body class="home-body">
-    <!-- Parallax background — teleported to <body> so position: fixed
-         resolves against the viewport, not the #app stacking context.
-         Scoped styles cannot reach teleported elements — see :global()
-         blocks in <style>. -->
-    <Teleport to="body">
-      <div class="parallax-stage" aria-hidden="true">
-        <div id="parallax-bg" class="parallax-layer parallax-layer-bg">
-          <img src="/images/home/parallax/background.jpg" alt="" />
-        </div>
-      </div>
-    </Teleport>
-
     <!-- FIXED INTERACTIVE CONTAINER: Contains ONLY the menu links -->
     <header class="global-navbar">
       <MainNav />
@@ -150,9 +112,18 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
     </Motion>
 
     <main class="grid-main">
-      <!-- ref="aboutRef" gives Motion's useScroll a target element.
+      <!-- aboutRef gives Motion's useScroll a target element.
            Z-stack: midground (1) behind content (2) behind foreground (3). -->
       <section class="about" ref="aboutRef">
+        <!-- x: '-50%' centers the box (paired with left: 50% in CSS) — this
+             has to go through Motion's own style binding rather than a CSS
+             transform, because Motion's inline y-transform below would
+             otherwise overwrite a separate CSS transform entirely instead
+             of merging with it. -->
+        <Motion as="div" class="about-background" aria-hidden="true" :style="{ x: '-50%', y: bgY }">
+          <img src="/images/home/parallax/background.jpg" alt="" draggable="false" />
+        </Motion>
+
         <!-- whileInView fades the heading in as it enters the viewport.
              once: true means it only animates on the first scroll past. -->
         <Motion
@@ -242,48 +213,6 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   </body>
 </template>
 
-<style lang="scss">
-// ─── Parallax background ──────────────────────────────────────
-// VUE CONCEPT: Elements wrapped in <Teleport to="body"> escape Vue's
-// component scope. They need a normal global style block like this
-// to be styled correctly because Vue cannot inject scoped tracking IDs onto them.
-
-.parallax-stage {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.parallax-layer {
-  position: absolute;
-  will-change: transform;
-
-  img {
-    display: block;
-    pointer-events: none;
-  }
-}
-
-.parallax-layer-bg {
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-
-  // JAVASCRIPT DEPENDENCY: This element has its transform overwritten
-  // directly via script (bgSmoothed.on('change')). Do not add standard
-  // CSS transitions or transforms here — they will fight the JS updates.
-  img {
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    object-position: center top;
-    will-change: transform;
-  }
-}
-</style>
-
 <!-- VUE FEATURE: "scoped" ensures these rules only affect this specific file -->
 <style scoped lang="scss">
 .home-body {
@@ -330,7 +259,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
     text-decoration: none;
     margin: 0;
     padding-bottom: 10px;
-    padding-top: 40vh;
+    padding-top: 30vh;
   }
 
   h2 {
@@ -368,13 +297,24 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
     'about-content about-content';
   align-content: start;
   position: relative;
-  min-height: 60vh;
+
+  // Fluid instead of stepped at breakpoints, so it scales continuously
+  // with the vw-based midground/foreground images rather than jumping.
+  min-height: clamp(60vh, 55vh + 6vw, 80vh);
 
   // Bottom padding reserves space above the midground so text never
   // overlaps it regardless of content length. Tune to midground image height.
-  padding: 30px 50px 220px;
+  padding: 30px 50px 40px;
   background-color: transparent;
   isolation: isolate;
+
+  // Single source of truth shared by .about-content's padding-left and
+  // .about-foreground's width (see both below). Deriving one from the other
+  // is what guarantees the portrait and foreground always overlap by the
+  // same margin at every viewport size, instead of each being sized off an
+  // independent guess that only happens to line up at some widths.
+  --fg-width: 25vw;
+  --portrait-overlap: clamp(15px, 2vw, 40px);
 }
 
 .about-heading {
@@ -387,26 +327,34 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
 
 .about-content {
   grid-area: about-content;
-  position: absolute;
+  display: flow-root;
 
   // No flex/grid here — floats require a block formatting context to work.
   z-index: 2;
+
+  // Fluid instead of only kicking in at a 64em breakpoint, so the content
+  // shifts right in proportion to .about-foreground's 25vw width at every
+  // viewport size instead of snapping over abruptly at one width.
+  padding-left: 15vw;
 
   // Portrait photo — floated left with ellipse shape-outside so text
   // wraps the circular crop rather than the rectangular box.
   img {
     float: left;
-    width: 150px;
-    padding: 20px;
+
+    // Fluid instead of stepped at breakpoints, so it scales continuously
+    // alongside the vw-based midground/foreground images.
+    width: clamp(150px, 14vw, 250px);
+    padding: clamp(20px, 2vw, 30px);
     border-radius: 50%;
     object-fit: cover;
-    shape-outside: ellipse(120px 133px at 49.95% 50.03%);
+    shape-outside: ellipse(90px 110px at 49.95% 50.03%);
     -webkit-user-drag: none;
   }
 
   p {
-    font-size: 1em;
-    text-align: start;
+    font-size: clamp(1rem, 0.85rem + 0.6vw, 1.2rem);
+    text-align: left;
     text-wrap: balance;
     max-width: 500px;
   }
@@ -421,9 +369,44 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
     float: right;
     clear: right;
     width: 100%;
-    height: 40vh;
+
+    // Fluid instead of stepped at breakpoints, tracking the same vw-based
+    // scaling as .about-midground so the wrap boundary stays matched to it.
+    height: clamp(35vh, 30vh + 3vw, 40vh);
     shape-outside: url('/images/home/parallax/midground.png');
     pointer-events: none;
+  }
+}
+
+.about-background {
+  position: absolute;
+  // Centered via left: 50%, paired with x: '-50%' passed through Motion's
+  // style binding in the template (not a CSS transform here — see the
+  // comment there for why).
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  // Below 700px this stops shrinking with the viewport and overflows
+  // horizontally instead. background.jpg is portrait (aspect-ratio makes
+  // height ≈ 1.97× width), so width: 100% alone meant a narrower viewport
+  // produced a proportionally SHORTER box — squashing the image on phones.
+  // A min-width floor keeps the image at a comfortable size regardless of
+  // viewport width. 700px guarantees at least ~40% of it stays visible even
+  // at a 320px-wide viewport (320 / 700 ≈ 46%); narrower still, it degrades
+  // gracefully rather than hitting a hard cutoff.
+  min-width: 700px;
+  aspect-ratio: 1640 / 3236;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    -webkit-user-drag: none;
   }
 }
 
@@ -437,6 +420,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   z-index: 1;
 
   img {
+    display: block;
     width: 100%;
     height: auto;
     -webkit-user-drag: none;
@@ -446,7 +430,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
 .about-foreground {
   position: absolute;
   left: 0;
-  bottom: 0;
+  bottom: -3%;
   width: 25vw;
   z-index: 3;
 
@@ -496,49 +480,39 @@ footer a {
 
 // ─── Responsive ───────────────────────────────────────────────
 
+// Below 1071px, the portrait's clamp(150px, 14vw, 250px) float stops
+// shrinking with the viewport (14vw < 150px), so as the column keeps
+// narrowing the fixed-width float eats a growing share of it, squeezing
+// text into more and more wrapped lines. That inflates .about-content's
+// (and therefore .about's) height, which pushes the bottom-anchored
+// .about-background further down the page the narrower the screen gets.
+// Un-floating the portrait below 600px removes that squeeze.
+@media (width < 37.5em) {
+  .about-content {
+    padding-left: 0;
+
+    img {
+      float: none;
+      display: block;
+      margin: 0 auto clamp(15px, 4vw, 25px);
+      shape-outside: none;
+    }
+
+    .midground-boundary {
+      // No floated text left to guard against below this width.
+      display: none;
+    }
+  }
+}
+
 @media (width >= 37.5em) {
-  .about,
   .portfolio {
     padding: 30px 50px 220px;
-  }
-
-  .about {
-    min-height: 70vh;
-  }
-
-  .about-content img {
-    width: 250px;
-    padding: 30px;
-  }
-
-  .about-content p {
-    font-size: 1.2em;
-    text-align: left;
   }
 
   .anchor p {
     font-size: 1.1rem;
     width: 80%;
-  }
-
-  .midground-boundary {
-    height: 35vh;
-  }
-}
-
-@media (width >= 64em) {
-  .about {
-    grid-template-columns: 1fr 1fr;
-    min-height: 80vh;
-  }
-
-  .about-content {
-    padding-left: 15vw;
-  }
-
-  .about-content img {
-    padding-right: 30px;
-    float: left;
   }
 }
 </style>
