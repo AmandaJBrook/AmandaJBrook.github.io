@@ -2,7 +2,7 @@ name: Deploy Vue Site to GitHub Pages
 
 on:
   push:
-    branches: [vue-implementation] # Change this to 'master' if your primary branch uses that name instead
+    branches: [vue-implementation]
 
 permissions:
   contents: read
