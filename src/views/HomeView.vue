@@ -178,8 +178,8 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
           />
 
           <img
-            class="about-frame"
-            src="/images/home/frame.webp"
+            class="about-tree"
+            src="/images/home/parallax/tree.webp"
             alt=""
             aria-hidden="true"
             draggable="false"
@@ -374,7 +374,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   }
 }
 
-.about-frame {
+.about-tree {
   position: absolute;
 
   /* center the larger frame around the foreground box */
@@ -417,7 +417,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   // any cqw offset below scales at exactly the same rate as the images.
   container-type: inline-size;
 
-  img:not(.about-frame) {
+  img:not(.about-tree) {
     width: 100%;
     height: auto;
     -webkit-user-drag: none;
@@ -449,7 +449,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   }
 }
 
-.about-foreground .about-frame {
+.about-foreground .about-tree {
   /* Ensure the frame is allowed to be larger than its container */
   width: calc(2.7 * var(--fg-width));
   left: 0;
