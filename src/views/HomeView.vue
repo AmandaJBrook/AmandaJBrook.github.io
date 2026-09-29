@@ -131,7 +131,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
 
           <Motion
             as="article"
-            class="about-copy"
+            class="about-text"
             :initial="{ opacity: 0 }"
             :while-in-view="{ opacity: 1 }"
             :transition="{ duration: 0.6, delay: 0.15 }"
@@ -328,9 +328,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
   margin-bottom: 100vw; // reserve space for the midground/foreground images
 }
 
-.about-copy {
-  display: grid;
-  gap: 0.85rem;
+.about-text {
   max-width: 100%;
 
   p {
@@ -338,6 +336,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
     font-size: clamp(1rem, 0.85rem + 0.6vw, 1.2rem);
     text-align: left;
     text-wrap: balance;
+    padding-bottom: 20px;
   }
 }
 
@@ -533,7 +532,7 @@ footer a {
     gap: 1rem;
   }
 
-  .about-copy {
+  .about-text {
     order: 1;
     display: block;
   }
@@ -556,7 +555,7 @@ footer a {
 }
 
 .about-heading,
-.about-copy p {
+.about-text p {
   text-shadow: 2px 3px 10px rgb(0 0 0 / 55%);
 }
 </style>
