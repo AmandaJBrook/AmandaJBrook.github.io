@@ -262,7 +262,6 @@ const rotationStyle = computed(() =>
    Hidden for manually dragged cards (wrapper.label is undefined). */
 .card-label {
   position: absolute;
-  bottom: -18px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 9px;
