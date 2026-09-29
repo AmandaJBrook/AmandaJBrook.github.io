@@ -161,7 +161,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
         <!-- Figures driven by Motion useTransform — style bound to mgY/fgY.
              Motion applies translateY reactively as scrollYProgress updates. -->
         <Motion as="div" class="about-midground" aria-hidden="true" :style="{ y: mgY }">
-          <img src="/images/home/parallax/midground.png" alt="" draggable="false" />
+          <img src="/images/home/parallax/midground.webp" alt="" draggable="false" />
         </Motion>
 
         <!-- NOTE: aria-hidden lives on the individual decorative images below,
@@ -171,7 +171,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
              alt/aria-hidden. -->
         <Motion as="div" class="about-foreground" :style="{ y: fgY }">
           <img
-            src="/images/home/parallax/foreground.png"
+            src="/images/home/parallax/foreground.webp"
             alt=""
             aria-hidden="true"
             draggable="false"
@@ -179,7 +179,7 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
 
           <img
             class="about-frame"
-            src="/images/home/frame.png"
+            src="/images/home/frame.webp"
             alt=""
             aria-hidden="true"
             draggable="false"
