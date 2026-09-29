@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amanda Brook Design</title>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License https://github.com/rafgraph/spa-github-pages
+      //
+      // GitHub Pages only serves real files, so refreshing /oracle (or
+      // opening any URL that isn't a file) lands here. This script turns
+      // the path into a query string and redirects to the site root, e.g.
+      //   https://example.com/oracle?a=b#x  ->  https://example.com/?/oracle&a=b#x
+      // The matching script in index.html then restores the original URL
+      // before Vue Router starts, so the router sees /oracle as normal.
+      // Unknown URLs go through the same trip and end up on the router's
+      // catch-all route (the Page Not Found view).
+      //
+      // pathSegmentsToKeep: leave as 0 for a custom domain or a user site
+      // (username.github.io). For a project site that lives in a
+      // subfolder (username.github.io/repo-name/), set it to 1.
+      var pathSegmentsToKeep = 0
+
+      var l = window.location
+      l.replace(
+        l.protocol +
+          '//' +
+          l.hostname +
+          (l.port ? ':' + l.port : '') +
+          l.pathname
+            .split('/')
+            .slice(0, 1 + pathSegmentsToKeep)
+            .join('/') +
+          '/?/' +
+          l.pathname
+            .slice(1)
+            .split('/')
+            .slice(pathSegmentsToKeep)
+            .join('/')
+            .replace(/&/g, '~and~') +
+          (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+          l.hash,
+      )
+    </script>
+  </head>
+  <body>
+    <noscript>
+      This site needs JavaScript to run. <a href="/">Go to the home page</a>.
+    </noscript>
+  </body>
+</html>

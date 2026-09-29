@@ -24,6 +24,13 @@ const router = createRouter({
       name: 'oracle library',
       component: () => import('@/views/OracleLibrary.vue'),
     },
+    // Must stay last: matches any path that none of the routes above did,
+    // so unknown URLs show the Page Not Found view instead of a blank page.
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
+    },
   ],
 })
 
