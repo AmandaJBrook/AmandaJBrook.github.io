@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref } from 'vue'
 import MainNav from '../components/MainNav.vue'
 import OracleNav from '../components/OracleNav.vue'
 import OracleCard from '../components/OracleCard.vue'
+import BetaNoticeModal from '../components/BetaNoticeModal.vue'
 import { useCurrentDeckStore } from '../stores/currentDeck'
 import { spreads, CARD_HALF_W, CARD_HALF_H } from '../data/spreads'
 import type { CardWrapper, DragEndPayload, SpreadName } from '../types/oracle'
@@ -23,27 +24,6 @@ const playAreaRef = ref<HTMLElement | null>(null)
 // Used in onDeckDragEnd to get the deck's screen position,
 // which is needed to convert neodrag's offset coords to viewport coords.
 const deckAreaRef = ref<HTMLElement | null>(null)
-
-// ─── Card detail panel drop-up ────────────────────────────────
-// Mirrors the MainNav mobile menu pattern but inverted:
-// the panel is bottom-anchored, so height growth pushes content upward.
-// isDetailOpen tracks the <details> open state via the 'toggle' event.
-// detailBodyRef measures the inner content height on open so we can
-// drive a smooth CSS height transition instead of the browser's instant snap.
-const isDetailOpen = ref(false)
-const detailBodyRef = ref<HTMLElement | null>(null)
-const detailBodyHeight = ref(0)
-
-watch(isDetailOpen, async (newVal) => {
-  if (newVal) {
-    await nextTick()
-    if (detailBodyRef.value) {
-      detailBodyHeight.value = detailBodyRef.value.scrollHeight
-    }
-  } else {
-    detailBodyHeight.value = 0
-  }
-})
 
 // ─── Flip handler ─────────────────────────────────────────────
 // Called when a placed card is clicked (not dragged).
@@ -181,25 +161,29 @@ function handleDealSpread(spreadName: SpreadName): void {
       </section>
 
       <!-- Card detail panel — shown when a placed card is clicked.
-           Displays the card's reading text and position label if set.
-           Uses a drop-up pattern: <details> is bottom-anchored, so
-           measuring and transitioning the body height pushes content upward. -->
-      <details
-        class="card-selection"
-        v-if="store.selectedCard"
-        @toggle="(e) => (isDetailOpen = (e.target as HTMLDetailsElement).open)"
-      >
+           Kept as a semantic <details> element so it remains accessible while
+           the browser handles the open/close transition with the new CSS support. -->
+      <details class="card-selection" v-if="store.selectedCard">
         <summary class="card-selection-summary">
           <span class="summary-title">{{ store.selectedCard.card.title.toUpperCase() }}</span>
-          <span class="summary-chevron" :class="{ open: isDetailOpen }">&#x2039;</span>
+          <span class="summary-chevron-wrap">
+            <svg
+              class="summary-chevron"
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              stroke="currentColor"
+              stroke-width="2"
+              fill="none"
+              aria-hidden="true"
+            >
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+          </span>
           <button class="close-btn" @click.stop="store.clearSelection">✕</button>
         </summary>
 
-        <div
-          class="card-selection-body"
-          ref="detailBodyRef"
-          :style="{ height: detailBodyHeight + 'px' }"
-        >
+        <div class="card-selection-body">
           <div class="card-selection-inner">
             <h3 v-if="store.selectedCard.label">{{ store.selectedCard.label.toUpperCase() }}</h3>
             <h3 v-else>{{ store.selectedCard.card.subtitle.toUpperCase() }}</h3>
@@ -218,6 +202,10 @@ function handleDealSpread(spreadName: SpreadName): void {
         @deal-spread="handleDealSpread"
       />
     </footer>
+
+    <!-- Beta notice — teleports itself to <body>, so it isn't affected by
+         .oracle-body's fixed grid layout. Shows once per browser session. -->
+    <BetaNoticeModal />
   </div>
 </template>
 
@@ -238,7 +226,6 @@ header {
 
 .oracle-main {
   grid-area: main;
-  border: 1px solid #28c02d;
   display: block;
   position: relative;
   height: 85vh;
@@ -253,7 +240,7 @@ header {
   left: 3%;
   width: 94%;
   height: 90%;
-  border: 1px solid #7e28c0;
+  background: rgb(38 43 43);
 }
 
 .deck-area {
@@ -279,19 +266,31 @@ header {
 
 .card-selection {
   position: absolute;
-  border-radius: 5px;
-  bottom: 5%;
-  right: 3%;
-  width: clamp(200px, 20vw, 400px);
-  border: 1px solid #b1c028;
+  border-radius: 10px;
+  top: 5%;
+  left: 3%;
+  width: clamp(250px, 20vw, 400px);
+  border: 1.5px solid var(--primary);
   box-sizing: border-box;
   color: white;
+  background: var(--glass);
+  interpolate-size: allow-keywords;
 
   /* Prevent the browser's default <details> marker */
   list-style: none;
 }
 
 /* Remove the default disclosure triangle */
+.card-selection-summary {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
 .card-selection > summary {
   list-style: none;
 }
@@ -300,35 +299,35 @@ header {
   display: none;
 }
 
-.card-selection-summary {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 8px 10px;
-  cursor: pointer;
-  user-select: none;
-}
-
 .summary-title {
   font-size: 0.85rem;
-  flex: 1;
   margin: 0;
   font-family: var(--serif-typeface, serif);
   letter-spacing: 0.08em;
 }
 
-/* Chevron rotates 90° when open, pointing upward */
-.summary-chevron {
-  display: inline-block;
-  font-size: 1.4rem;
-  line-height: 1;
-  transform: rotate(90deg);
-  transition: transform 0.3s ease;
-  opacity: 0.7;
+.summary-chevron-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
 }
 
-.summary-chevron.open {
-  transform: rotate(-90deg);
+.summary-chevron {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: currentcolor;
+  opacity: 0.7;
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: transform 0.3s ease-in;
+}
+
+.card-selection[open] .summary-chevron {
+  transform: rotate(180deg);
 }
 
 .close-btn {
@@ -346,12 +345,25 @@ header {
   opacity: 1;
 }
 
-/* The animated body — height transitions from 0 to measured scrollHeight.
-   overflow: hidden clips content during the transition. */
-.card-selection-body {
-  height: 0;
+.card-selection::details-content {
+  display: block;
   overflow: hidden;
-  transition: height 0.3s ease-in;
+  block-size: 0;
+  opacity: 0;
+  transition:
+    block-size 0.3s ease-in,
+    opacity 0.3s ease-in,
+    content-visibility 0.3s allow-discrete;
+  transition-behavior: allow-discrete;
+}
+
+.card-selection[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+.card-selection-body {
+  overflow: hidden;
 }
 
 .card-selection-inner {
@@ -368,12 +380,13 @@ header {
 
 .card-selection p {
   margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.4;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  text-align: left;
 }
 
 footer {
   grid-area: bottom;
-  height: 60px;
+  height: 15vh;
 }
 </style>
