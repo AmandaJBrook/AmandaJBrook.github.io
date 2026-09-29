@@ -109,7 +109,7 @@ withDefaults(
   {
     links: () => [
       { label: 'about', href: '#about', type: 'anchor' as NavLinkType },
-      { label: 'portfolio', href: '#portfolio', type: 'anchor' as NavLinkType },
+      { label: 'portfolio', href: '/portfolio', type: 'router' as NavLinkType },
       { label: 'contact', href: '#contact', type: 'anchor' as NavLinkType },
     ],
   },
