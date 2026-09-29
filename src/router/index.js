@@ -10,6 +10,11 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
     },
     {
+      path: '/portfolio',
+      name: 'porfolio',
+      component: () => import('@/views/PortfolioGallery.vue'),
+    },
+    {
       path: '/oracle',
       name: 'oracle',
       component: () => import('@/views/OracleView.vue'),
