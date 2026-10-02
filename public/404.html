@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Page Not Found</title>
@@ -24,8 +24,8 @@
             .split('/')
             .slice(pathSegmentsToKeep)
             .join('/')
-            .replace(/&/g, '~and~') +
-          (l.search ? '&' + l.search.replace(/&/g, '~and~') : '') +
+            .replaceAll('&', '~and~') +
+          (l.search ? '&' + l.search.replaceAll('&', '~and~') : '') +
           l.hash,
       )
     </script>
