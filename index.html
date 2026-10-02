@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/sparkles.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Amanda Brook Design</title>
     <script type="text/javascript">
       // Single Page Apps for GitHub Pages
@@ -14,7 +14,7 @@
             .slice(1)
             .split('&')
             .map(function (s) {
-              return s.replace(/~and~/g, '&')
+              return s.replaceAll('~and~', '&')
             })
             .join('?')
           window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash)
