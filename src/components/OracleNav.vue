@@ -142,6 +142,10 @@ const handleTouchEnd = () => {
 </template>
 
 <style scoped lang="scss">
+* {
+  text-transform: lowercase;
+}
+
 .oracle-nav {
   position: fixed;
   left: 50%;
@@ -179,7 +183,8 @@ const handleTouchEnd = () => {
 
 .nav-trigger:hover {
   color: var(--primary);
-  background: transparent;
+
+  // background: transparent;
 }
 
 .menu-panel {
@@ -246,7 +251,8 @@ button {
 
 button:hover {
   color: var(--primary);
-  background: transparent;
+
+  // background: transparent;
 }
 
 label {
