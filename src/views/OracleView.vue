@@ -269,7 +269,7 @@ header {
   border-radius: 10px;
   top: 5%;
   left: 3%;
-  width: clamp(250px, 20vw, 400px);
+  width: clamp(20%, 400px, 500px);
   border: 1.5px solid var(--primary);
   box-sizing: border-box;
   color: white;
@@ -286,7 +286,7 @@ header {
   grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 0.5rem;
-  padding: 8px 10px;
+  padding: 10px 20px;
   cursor: pointer;
   user-select: none;
 }
@@ -300,7 +300,7 @@ header {
 }
 
 .summary-title {
-  font-size: 0.85rem;
+  font-size: 1.5rem;
   margin: 0;
   font-family: var(--serif-typeface, serif);
   letter-spacing: 0.08em;
@@ -310,15 +310,15 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   flex-shrink: 0;
 }
 
 .summary-chevron {
   display: block;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 2rem;
+  height: 2rem;
   color: currentcolor;
   opacity: 0.7;
   transform-origin: center;
@@ -335,7 +335,7 @@ header {
   border: none;
   color: white;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.5rem;
   padding: 0 2px;
   opacity: 0.7;
   transition: opacity 0.2s ease;
@@ -367,20 +367,20 @@ header {
 }
 
 .card-selection-inner {
-  padding: 0 10px 10px;
+  padding: 0 20px 20px;
   overflow-y: auto;
   max-height: 200px;
 }
 
 .card-selection h3 {
   margin: 0 0 8px;
-  font-size: 0.7rem;
+  font-size: 1.1rem;
   opacity: 0.7;
 }
 
 .card-selection p {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 1rem;
   line-height: 1.2;
   text-align: left;
 }
