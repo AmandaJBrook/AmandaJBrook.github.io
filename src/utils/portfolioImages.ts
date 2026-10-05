@@ -25,13 +25,10 @@ const images = import.meta.glob<PortfolioImage>(
   { query: '?lqip', import: 'default', eager: true },
 )
 
-// `link` is the path the portfolio data already uses, e.g.
-// '/images/portfolio/paintings/Willy (2019).jpg'. It maps onto the same
-// path under src/assets, so the data doesn't need to change.
+// `link` matches the glob key, e.g.
+// '/src/assets/images/portfolio/paintings/Willy (2019).jpg'.
 //
-// If no matching file is found, this falls back to the link as-is (no
-// placeholder), so an image that hasn't been moved yet still loads from
-// /public exactly as before.
+// Vite replaces the matching entry with its hashed production URL.
 export function getPortfolioImage(link: string): PortfolioImage {
-  return images[`/src/assets/images/portfolio${link}`] ?? { src: link }
+  return images[link] ?? { src: link }
 }
