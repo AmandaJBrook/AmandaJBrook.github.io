@@ -389,4 +389,11 @@ footer {
   grid-area: bottom;
   height: 15vh;
 }
+
+/* media queries */
+@media (width <= 37.5em) {
+  .card-selection {
+    width: 92%;
+  }
+}
 </style>
