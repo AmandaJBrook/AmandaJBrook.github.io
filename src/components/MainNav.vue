@@ -125,9 +125,15 @@ withDefaults(
       :aria-expanded="isMobileMenuOpen"
       aria-label="Toggle menu"
     >
-      <span></span>
-      <span></span>
-      <span></span>
+      <svg viewBox="0 0 25 3" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="25" height="3" />
+      </svg>
+      <svg viewBox="0 0 25 3" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="25" height="3" />
+      </svg>
+      <svg viewBox="0 0 25 3" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="25" height="3" />
+      </svg>
     </button>
 
     <div class="views-group">
@@ -185,36 +191,44 @@ nav {
 .hamburger {
   grid-area: hamburger;
   display: none;
-  place-self: center start;
-  padding: 1rem;
+  flex-direction: column;
+  gap: 5px;
+  place-self: start;
+  box-sizing: border-box;
+  height: 60px;
+  padding: 20px 1rem 21px;
   background: none;
   border: none;
   cursor: pointer;
 }
 
-.hamburger span {
+.hamburger svg {
   display: block;
   width: 25px;
   height: 3px;
-  background: var(--light);
-  margin: 5px 0;
+  margin: 0;
   transition: 0.3s;
 }
 
-.hamburger.open span {
-  background: var(--primary);
+.hamburger svg rect {
+  fill: var(--light);
+  transition: fill 0.3s;
 }
 
-.hamburger.open span:nth-child(2) {
+.hamburger.open svg rect {
+  fill: var(--primary);
+}
+
+.hamburger.open svg:nth-child(2) {
   transform: scaleX(0);
   opacity: 0;
 }
 
-.hamburger.open span:nth-child(1) {
+.hamburger.open svg:nth-child(1) {
   transform: translateY(8px) rotate(45deg);
 }
 
-.hamburger.open span:nth-child(3) {
+.hamburger.open svg:nth-child(3) {
   transform: translateY(-8px) rotate(-45deg);
 }
 
@@ -223,6 +237,8 @@ nav {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 10px;
+  padding: 0 20px;
 }
 
 .logo {
@@ -330,6 +346,8 @@ menu {
   .views-group {
     justify-content: flex-start;
     flex-direction: row-reverse;
+    gap: 10px;
+    padding: 0 10px;
   }
 
   menu {
@@ -342,7 +360,7 @@ menu {
 /* Mobile styles */
 @media (width <= 768px) {
   .hamburger {
-    display: block;
+    display: flex;
   }
 
   menu {
@@ -362,6 +380,7 @@ menu {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+    justify-content: center;
   }
 }
 </style>
