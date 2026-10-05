@@ -161,7 +161,9 @@ const fgY = useSpring(rawFgY, SPRING_CONFIG)
         <!-- Figures driven by Motion useTransform — style bound to mgY/fgY.
              Motion applies translateY reactively as scrollYProgress updates. -->
         <Motion as="div" class="about-midground" aria-hidden="true" :style="{ y: mgY }">
-          <img src="/images/home/parallax/midground.webp" alt="" draggable="false" />
+          <RouterLink :to="{ name: 'portfolio' }" class="portfolio">
+            <img src="/images/home/parallax/midground.webp" alt="" draggable="false" />
+          </RouterLink>
         </Motion>
 
         <!-- NOTE: aria-hidden lives on the individual decorative images below,
