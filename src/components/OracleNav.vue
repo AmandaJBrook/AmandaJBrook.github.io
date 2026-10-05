@@ -1,65 +1,42 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, type CSSProperties } from 'vue'
 
 const emit = defineEmits(['shuffle', 'clear-table', 'deal-spread', 'reset', 'toggle-reversal'])
+
+const DRAG_SLOP = 6 // px a touch must travel before it becomes a drag (keeps taps working)
+const FLICK_VELOCITY = 0.4 // px/ms; a fast flick wins over where the panel was released
+
 const isMenuOpen = ref(false)
-const touchStartY = ref<number | null>(null)
-const triggerRef = ref<HTMLElement | null>(null)
+const navRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
+const panelHeight = ref(0)
 
-const openOffset = computed(() => {
-  const panel = panelRef.value
+// 0 = closed … 1 = open while a finger is dragging; null when idle
+const dragProgress = ref<number | null>(null)
+const isDragging = computed(() => dragProgress.value !== null)
 
-  if (!panel) return 0
-
-  return panel.offsetHeight
-})
-
-const triggerTransform = computed(() => {
-  if (!isMenuOpen.value) return 'translateY(0)'
-
-  return `translateY(-${openOffset.value}px)`
-})
-
-watch(
-  isMenuOpen,
-  () => {
-    nextTick(() => {
-      if (!triggerRef.value || !panelRef.value) return
-      const offset = panelRef.value.offsetHeight
-      if (isMenuOpen.value) {
-        triggerRef.value.style.transform = `translateY(-${offset}px)`
-      } else {
-        triggerRef.value.style.transform = 'translateY(0)'
-      }
-    })
-  },
-  { flush: 'post' },
+// One variable (--progress) drives the trigger, panel position and panel opacity.
+// Idle: CSS sets it from the .open class. Dragging: we override it inline.
+const navStyle = computed(
+  () =>
+    ({
+      '--panel-h': `${panelHeight.value}px`,
+      ...(dragProgress.value !== null && { '--progress': dragProgress.value }),
+    }) as CSSProperties,
 )
 
+let resizeObserver: ResizeObserver | undefined
+
 onMounted(() => {
-  const updateMetrics = () => {
-    if (!triggerRef.value || !panelRef.value) return
-    const offset = panelRef.value.offsetHeight
-    triggerRef.value.style.transform = isMenuOpen.value
-      ? `translateY(-${offset}px)`
-      : 'translateY(0)'
-  }
-
-  updateMetrics()
-
-  const resizeObserver = new ResizeObserver(() => updateMetrics())
-
-  if (triggerRef.value) resizeObserver.observe(triggerRef.value)
-  if (panelRef.value) resizeObserver.observe(panelRef.value)
-
-  window.addEventListener('resize', updateMetrics)
-
-  onBeforeUnmount(() => {
-    resizeObserver.disconnect()
-    window.removeEventListener('resize', updateMetrics)
-  })
+  if (!panelRef.value) return
+  const panel = panelRef.value
+  const sync = () => (panelHeight.value = panel.offsetHeight)
+  sync()
+  resizeObserver = new ResizeObserver(sync)
+  resizeObserver.observe(panel)
 })
+
+onBeforeUnmount(() => resizeObserver?.disconnect())
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -69,42 +46,82 @@ const handleAction = (handler: () => void) => {
   handler()
 }
 
-const handleTouchStart = (event: TouchEvent) => {
-  touchStartY.value = event.touches[0].clientY
+/* ---------- swipe gesture (touch + pen; mouse users just click) ---------- */
+
+let pointerId: number | null = null
+let startY = 0
+let startProgress = 0
+let lastY = 0
+let lastT = 0
+let velocity = 0 // px/ms, positive = moving down
+let swiped = false
+
+const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
+
+const onPointerDown = (e: PointerEvent) => {
+  if (e.pointerType === 'mouse' || !e.isPrimary) return
+  pointerId = e.pointerId
+  startY = lastY = e.clientY
+  lastT = e.timeStamp
+  velocity = 0
+  startProgress = isMenuOpen.value ? 1 : 0
 }
 
-const handleTouchMove = (event: TouchEvent) => {
-  if (touchStartY.value === null) return
+const onPointerMove = (e: PointerEvent) => {
+  if (e.pointerId !== pointerId) return
 
-  const deltaY = touchStartY.value - event.touches[0].clientY
+  const dy = e.clientY - startY
 
-  if (deltaY > 40) {
-    isMenuOpen.value = true
-  } else if (deltaY < -40) {
-    isMenuOpen.value = false
+  if (dragProgress.value === null) {
+    if (Math.abs(dy) < DRAG_SLOP) return
+    navRef.value?.setPointerCapture(e.pointerId) // keep receiving moves even if the finger leaves the nav
+    swiped = true
   }
+
+  const dt = e.timeStamp - lastT
+  if (dt > 0) velocity = 0.7 * velocity + 0.3 * ((e.clientY - lastY) / dt)
+  lastY = e.clientY
+  lastT = e.timeStamp
+
+  // Panel follows the finger: drag up = more open, drag down = more closed
+  dragProgress.value = clamp01(startProgress - dy / (panelHeight.value || 1))
 }
 
-const handleTouchEnd = () => {
-  touchStartY.value = null
+const endGesture = (e: PointerEvent) => {
+  if (e.pointerId !== pointerId) return
+  pointerId = null
+
+  const progress = dragProgress.value
+  if (progress === null) return // it was a tap, let click handle it
+
+  // Flick direction wins; otherwise snap to whichever end is closer
+  isMenuOpen.value = Math.abs(velocity) > FLICK_VELOCITY ? velocity < 0 : progress >= 0.5
+  dragProgress.value = null
+
+  // Swallow the click that can follow a swipe, then re-arm
+  setTimeout(() => (swiped = false))
+}
+
+const onClickCapture = (e: MouseEvent) => {
+  if (!swiped) return
+  e.stopPropagation()
+  e.preventDefault()
 }
 </script>
 
 <template>
   <nav
+    ref="navRef"
     class="oracle-nav"
-    :class="{ open: isMenuOpen }"
-    @touchstart="handleTouchStart"
-    @touchmove="handleTouchMove"
-    @touchend="handleTouchEnd"
+    :class="{ open: isMenuOpen, dragging: isDragging }"
+    :style="navStyle"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="endGesture"
+    @pointercancel="endGesture"
+    @click.capture="onClickCapture"
   >
-    <button
-      ref="triggerRef"
-      class="nav-trigger"
-      :class="{ open: isMenuOpen }"
-      :style="{ transform: triggerTransform }"
-      @click="toggleMenu"
-    >
+    <button class="nav-trigger" @click="toggleMenu">
       {{ isMenuOpen ? 'Close Actions' : 'Oracle Actions' }}
     </button>
 
@@ -147,6 +164,8 @@ const handleTouchEnd = () => {
 }
 
 .oracle-nav {
+  --progress: 0; // 0 = closed, 1 = open; overridden inline while dragging
+
   position: fixed;
   left: 50%;
   bottom: 0;
@@ -156,7 +175,17 @@ const handleTouchEnd = () => {
   flex-direction: column;
   align-items: center;
   z-index: 100;
-  touch-action: pan-y;
+  touch-action: none; // the nav owns its vertical gestures; the page behind still scrolls
+
+  &.open {
+    --progress: 1;
+  }
+
+  // While a finger is down, follow it 1:1 with no easing
+  &.dragging .nav-trigger,
+  &.dragging .menu-panel {
+    transition: none;
+  }
 }
 
 .nav-trigger {
@@ -172,26 +201,24 @@ const handleTouchEnd = () => {
   font-family: var(--serif-typeface);
   letter-spacing: 0.12rem;
   cursor: pointer;
-  transform: translateY(0);
+  transform: translateY(calc(var(--panel-h, 0px) * var(--progress) * -1));
   transition:
     color 0.2s ease,
     background-color 0.2s ease,
     border-color 0.2s ease,
-    transform 0.3s ease-in;
+    transform 0.3s ease-out;
   box-shadow: 0 -4px 12px rgb(0 0 0 / 18%);
 }
 
 .nav-trigger:hover {
   color: var(--primary);
-
-  // background: transparent;
 }
 
 .menu-panel {
   position: absolute;
   left: 50%;
   bottom: 0;
-  transform: translateX(-50%) translateY(100%);
+  transform: translateX(-50%) translateY(calc((1 - var(--progress)) * 100%));
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -201,26 +228,16 @@ const handleTouchEnd = () => {
   border-radius: 1rem 1rem 0 0;
   background: var(--glass);
   backdrop-filter: blur(10px);
-  opacity: 0;
+  opacity: var(--progress);
   visibility: visible;
   pointer-events: none;
   transition:
-    opacity 0.3s ease-in,
-    transform 0.3s ease-in;
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
 }
 
 .menu-panel.open {
-  opacity: 1;
   pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
-
-.nav-trigger.open {
-  transform: translateY(-1px);
-}
-
-.nav-trigger.closed {
-  transform: translateY(0);
 }
 
 .shuffle-controls,
@@ -251,8 +268,6 @@ button {
 
 button:hover {
   color: var(--primary);
-
-  // background: transparent;
 }
 
 label {
