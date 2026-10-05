@@ -3,7 +3,7 @@
 // Averia Serif Libre - Regular
 @font-face {
   font-family: 'Averia Serif Libre';
-  src: url('../assets/fonts/AveriaSerifLibre-Regular.ttf') format('woff2');
+  src: url('../assets/fonts/AveriaSerifLibre-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -12,26 +12,26 @@
 // Averia Serif Libre - Italic
 @font-face {
   font-family: 'Averia Serif Libre';
-  src: url('../assets/fonts/AveriaSerifLibre-Italic.ttf') format('ttf');
+  src: url('../assets/fonts/AveriaSerifLibre-Italic.ttf') format('truetype');
   font-weight: 400;
   font-style: italic; // <-- This tells the browser this file is for italics!
   font-display: swap;
 }
 
-// Open Sans - Regular
+// Open Sans - Variable
 @font-face {
   font-family: 'Open Sans';
-  src: url('../assets/fonts/OpenSans-Regular.ttf') format('ttf');
-  font-weight: 400;
+  src: url('../assets/fonts/OpenSans-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 300 800;
   font-style: normal;
   font-display: swap;
 }
 
-// Open Sans - Bold
+// Open Sans - Variable Italic
 @font-face {
   font-family: 'Open Sans';
-  src: url('../assets/fonts/OpenSans-Bold.ttf') format('ttf');
-  font-weight: 700;
-  font-style: normal;
+  src: url('../assets/fonts/OpenSans-Italic-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 300 800;
+  font-style: italic;
   font-display: swap;
 }
