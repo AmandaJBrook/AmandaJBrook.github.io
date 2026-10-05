@@ -21,7 +21,7 @@ export interface PortfolioImage {
 }
 
 const images = import.meta.glob<PortfolioImage>(
-  '/public/images/portfolio/**/*.{jpg,jpeg,png,webp}',
+  '/src/assets/images/portfolio/**/*.{jpg,jpeg,png,webp}',
   { query: '?lqip', import: 'default', eager: true },
 )
 
@@ -33,5 +33,5 @@ const images = import.meta.glob<PortfolioImage>(
 // placeholder), so an image that hasn't been moved yet still loads from
 // /public exactly as before.
 export function getPortfolioImage(link: string): PortfolioImage {
-  return images[`/public/images/portfolio${link}`] ?? { src: link }
+  return images[`/src/assets/images/portfolio${link}`] ?? { src: link }
 }

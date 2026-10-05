@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Motion, AnimatePresence } from 'motion-v'
 import type { DesignData, PaintingData, WebsiteData } from '@/types/portfolio'
+import { getPortfolioImage } from '@/utils/portfolioImages'
 
 // ─── Prop types ───────────────────────────────────────────────
 // category is a closed union — adding a new type requires updating
@@ -23,7 +24,7 @@ type SlideDirection = 'next' | 'prev'
 
 const props = withDefaults(
   defineProps<{
-    items?: CarouselItem[]
+    items: CarouselItem[]
     category: CarouselCategory
   }>(),
   {
@@ -272,6 +273,22 @@ const getItemMetadata = (item: CarouselItem): ItemMetadata => {
 
 const currentMetadata = computed(() => getItemMetadata(currentItem.value))
 
+// ─── Blurred image placeholders ───────────────────────────────
+// Each card shows a tiny blurred copy of its image (generated at build
+// time by vite-plugin-lqip) until the real image finishes loading, then
+// drops it. It has to be dropped rather than left behind the image:
+// any transparent areas in a PNG would otherwise show the blur through.
+//
+// Tracked by link, not by card, because the track renders every item
+// three times for the infinite loop — one load clears all three copies.
+const loadedLinks = reactive(new Set<string>())
+
+const placeholderStyle = (link: string) => {
+  const { lqip } = getPortfolioImage(link)
+  if (!lqip || loadedLinks.has(link)) return undefined
+  return { backgroundImage: `url(${lqip})`, backgroundSize: '100% 100%' }
+}
+
 // Motion animate target for the modal image pan+zoom.
 // Motion drives this directly — no manual transform string needed.
 const imageAnimate = computed(() => ({
@@ -413,7 +430,19 @@ watch(isModalOpen, (open) => {
         @click="scrollByOne(-1)"
         aria-label="Previous"
       >
-        ❮
+        <svg
+          data-v-5b3d07c1=""
+          class="summary-chevron"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          stroke="currentColor"
+          stroke-width="2"
+          fill="none"
+          aria-hidden="true"
+        >
+          <polyline data-v-5b3d07c1="" points="15 18 9 12 15 6"></polyline>
+        </svg>
       </button>
 
       <div class="gallery-grid" ref="trackRef" :style="{ '--card-width': `${cardWidthPx}px` }">
@@ -424,7 +453,16 @@ watch(isModalOpen, (open) => {
           @click="openModal(realIndex(index))"
         >
           <figure class="gallery-figure"></figure>
-          <img :src="item.link" :alt="item.name" class="gallery-image" loading="lazy" />
+          <img
+            :src="getPortfolioImage(item.link).src"
+            :width="getPortfolioImage(item.link).width"
+            :height="getPortfolioImage(item.link).height"
+            :style="placeholderStyle(item.link)"
+            :alt="item.name"
+            class="gallery-image"
+            loading="lazy"
+            @load="loadedLinks.add(item.link)"
+          />
           <h1 class="gallery-title">{{ item.name }} ({{ item.year }})</h1>
           <h2 class="gallery-description">{{ getItemMetadata(item).details }}</h2>
         </article>
@@ -436,7 +474,19 @@ watch(isModalOpen, (open) => {
         @click="scrollByOne(1)"
         aria-label="Next"
       >
-        ❯
+        <svg
+          data-v-5b3d07c1=""
+          class="summary-chevron"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          stroke="currentColor"
+          stroke-width="2"
+          fill="none"
+          aria-hidden="true"
+        >
+          <polyline data-v-5b3d07c1="" points="9 6 15 12 9 18"></polyline>
+        </svg>
       </button>
     </div>
 
@@ -467,7 +517,7 @@ watch(isModalOpen, (open) => {
                   :key="currentItem.link"
                   as="img"
                   class="modal-image"
-                  :src="currentItem.link"
+                  :src="getPortfolioImage(currentItem.link).src"
                   :alt="currentMetadata.title"
                   loading="lazy"
                   draggable="false"
