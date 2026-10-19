@@ -22,15 +22,10 @@ interface ItemMetadata {
 // ─── Slide direction ──────────────────────────────────────────
 type SlideDirection = 'next' | 'prev'
 
-const props = withDefaults(
-  defineProps<{
-    items: CarouselItem[]
-    category: CarouselCategory
-  }>(),
-  {
-    items: () => [],
-  },
-)
+const props = defineProps<{
+  items: CarouselItem[]
+  category: CarouselCategory
+}>()
 
 // ─── Carousel scrolling ───────────────────────────────────────
 // The side-scrolling and snap-to-card feel is native CSS
@@ -735,7 +730,8 @@ watch(isModalOpen, (open) => {
   // either edge. The 260px fallback only matters for the instant
   // before the script's first measurement runs.
   flex: 0 0 var(--card-width, 260px);
-  scroll-snap-align: start;
+  padding: 20px;
+  scroll-snap-align: center;
   scroll-snap-stop: always;
   cursor: pointer;
   transition:
@@ -768,9 +764,10 @@ watch(isModalOpen, (open) => {
 }
 
 .gallery-image {
+  display: block;
   width: 100%;
   height: auto;
-  display: block;
+  border-radius: 8px;
   transition: transform 0.3s ease;
 }
 
